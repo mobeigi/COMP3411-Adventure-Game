@@ -11,10 +11,22 @@ import java.net.*;
 
 public class Agent {
 
+  //Class variables
+  private State state;
+
+  public Agent() {
+    //Initlise agent
+    state = new State();
+  }
+
    public char get_action( char view[][] ) {
 
       // REPLACE THIS CODE WITH AI TO CHOOSE ACTION
-
+      state.updateFromView(view);
+      
+      
+      
+      
       int ch=0;
 
       System.out.print("Enter Action(s): ");
@@ -34,7 +46,8 @@ public class Agent {
       catch (IOException e) {
          System.out.println ("IO error:" + e );
       }
-
+      
+      
       return 0;
    }
 
