@@ -7,10 +7,10 @@ public class State {
   //Definitions
   
   //Direction (facing)
-  final static int RIGHT = 0;
-  final static int UP = 1;
+  final static int UP = 0;
+  final static int DOWN = 1;
   final static int LEFT = 2;
-  final static int DOWN = 3;
+  final static int RIGHT = 3;
   
   //Direction characters
   final static char DIRECTION_UP = '^';
@@ -79,37 +79,219 @@ public class State {
   
   //Update map based on changes in view
   public void updateFromView(char view[][]) {
+    //todo remove
+    System.out.println("curX: " + curX + ", curY: " + curY);
+
     //We will treat the [0-4] indexes given by the view as offsets
     //Thus, and x of 0 becomes -2, x of 1 becomes -1 and so on
     //The player is always at (2,2) in the view, the center tile of the view
-    for (int x = 0; x < 5; ++x) {
-      for (int y = 0; y < 5; ++y) {
-        char curTile = view[x][y];
+    for (int i = 0; i < 5; ++i) {
+      for (int j = 0; j < 5; ++j) {
+        char curTile = view[i][j];
+        int xFinal = curX + (j - 2);
+        int yFinal = curY + (2 - i);
 
-        if (curTile == DIRECTION_DOWN || curTile == DIRECTION_LEFT || curTile == DIRECTION_RIGHT || curTile == DIRECTION_UP) {
-          //We already know our position, continue
-          continue;
+        //If this is the players tile
+        if (i == 2 && j == 2) {
+          switch(direction) {
+            case UP:
+              curTile = DIRECTION_UP;
+              break;
+            case DOWN:
+              curTile = DIRECTION_DOWN;
+              break;
+            case LEFT:
+              curTile = DIRECTION_LEFT;
+              break;
+            case RIGHT:
+              curTile = DIRECTION_RIGHT;
+              break;
+          }
         }
 
         //Update tile in map
-        map.put(new Point2D.Double(curX + (x-2), curY + (y-2)), curTile); //subtract 2 from view indexes to make them x,y offsets respectively
+        map.put(new Point2D.Double(xFinal, yFinal), curTile);
+        //System.out.println("Placed at ("+(xFinal)+","+ (yFinal)+"): " + curTile);
       }
     }
     
-    //Debug
-    this.printMap();
+    //todo: remove this
+    //this.printMap();
+    this.printMapRotating();
   }
 
-  
-  //Print map
-  public void printMap() {
-    System.out.print('\n');
-    
-    for (int x = -6; x < 6; ++x) {
-      for (int y = -6; y < 6; ++y) {
-        System.out.print(map.get(new Point2D.Double(x,y)));
+  public char makeMove()
+  {
+      int ch=0;
+
+      System.out.print("Enter Action(s): ");
+
+      try {
+          while ( ch != -1 ) {
+              // read character from keyboard
+              ch  = System.in.read();
+
+              switch( ch ) { // if character is a valid action, return it
+                  case 'F': case 'L': case 'R': case 'C': case 'U':
+                  case 'f': case 'l': case 'r': case 'c': case 'u':
+                    updateFromMove((char)ch);
+                    return((char) ch );
+              }
+          }
       }
-        System.out.print('\n');
+      catch (IOException e) {
+          System.out.println ("IO error:" + e );
+      }
+
+      return 0;
+  }
+
+  //Update map based on changes from a move
+  //todo: optimize switch statements for direction
+  private void updateFromMove(char move){
+    switch(move) {
+      case 'L':
+      case 'l':
+        //Moved left
+        switch(direction) {
+          case UP:
+            direction = LEFT;
+            break;
+          case DOWN:
+            direction = RIGHT;
+            break;
+          case LEFT:
+            direction = DOWN;
+            break;
+          case RIGHT:
+            direction = UP;
+            break;
+        }
+        break;
+      case 'R':
+      case 'r':
+        //Moved right
+        switch(direction) {
+          case UP:
+            direction = RIGHT;
+            break;
+          case DOWN:
+            direction = LEFT;
+            break;
+          case LEFT:
+            direction = UP;
+            break;
+          case RIGHT:
+            direction = DOWN;
+            break;
+        }
+        break;
+      case 'F':
+      case 'f':
+        //We moved forward, update our curX, curY
+        switch(direction) {
+          case UP:
+            curY += 1;
+            break;
+          case DOWN:
+            curY -= 1;
+            break;
+          case LEFT:
+            curX -= 1;
+            break;
+          case RIGHT:
+            curX += 1;
+            break;
+        }
+        break;
+      case 'C':
+      case 'c':
+        break;
+      case 'U':
+      case 'u':
+        break;
     }
+  }
+
+
+  //Print map (rotating map)
+  public void printMapRotating() {
+    System.out.print("\nRotating Map\n");
+
+    //Traverse map showing 12by12 grid from top left to bottom right
+    for (int y = 12; y >= -12; --y) {
+      for (int x = -12; x <= 12; ++x) {
+        char curTile = map.get(new Point2D.Double(x, y));
+
+        //if (curTile == DIRECTION_DOWN || curTile == DIRECTION_LEFT || curTile == DIRECTION_RIGHT || curTile == DIRECTION_UP) {
+        //  curTile = DIRECTION_UP;
+        //}
+
+        System.out.print(curTile);
+      }
+
+      System.out.print('\n');
+    }
+  }
+
+  //Print map (non-rotating map)
+  public void printMap() {
+    int x, y;
+    x = y = 0;
+    char[][] tempMap = new char[12][12];
+
+    for (int i = -6; i < 6; ++i) {
+      for (int j = -6; j < 6; ++j) {
+        tempMap[x][y++] = map.get(new Point2D.Double(i,j));
+      }
+      ++x;
+      y = 0;
+    }
+
+    //Determine how many times to rotate so it shows the non-rotating version
+    int numTimesToRotate = 0;
+
+    switch(direction) {
+      case UP:
+        break;
+      case DOWN:
+        numTimesToRotate = 2;
+        break;
+      case LEFT:
+        numTimesToRotate = 1;
+        break;
+      case RIGHT:
+        numTimesToRotate = 3;
+        break;
+    }
+
+    char[][] finalMap = tempMap;
+
+    for (int i = 0; i < numTimesToRotate; ++i) {
+      tempMap = rotateCW(tempMap);
+      finalMap = tempMap;
+    }
+
+    System.out.print("\nNon-rotating Map\n");
+
+    for (int i2 = 0; i2 < 12; ++i2) {
+      for (int j2 = 0; j2 < 12; ++j2) {
+        System.out.print(finalMap[i2][j2]);
+      }
+      System.out.print('\n');
+    }
+  }
+
+  //From: https://stackoverflow.com/a/2800033/1800854
+  private static char[][] rotateCW(char[][] mat) {
+    final int M = mat.length;
+    final int N = mat[0].length;
+    char[][] ret = new char[N][M];
+    for (int r = 0; r < M; r++) {
+      for (int c = 0; c < N; c++) {
+        ret[c][M-1-r] = mat[r][c];
+      }
+    }
+    return ret;
   }
 }

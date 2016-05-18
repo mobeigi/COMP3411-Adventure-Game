@@ -19,57 +19,30 @@ public class Agent {
     state = new State();
   }
 
-   public char get_action( char view[][] ) {
-
-      // REPLACE THIS CODE WITH AI TO CHOOSE ACTION
-      state.updateFromView(view);
-
-
-
-
-      //TEMP
-      int ch=0;
-
-      System.out.print("Enter Action(s): ");
-
-      try {
-         while ( ch != -1 ) {
-            // read character from keyboard
-            ch  = System.in.read();
-
-            switch( ch ) { // if character is a valid action, return it
-            case 'F': case 'L': case 'R': case 'C': case 'U':
-            case 'f': case 'l': case 'r': case 'c': case 'u':
-               return((char) ch );
-            }
-         }
-      }
-      catch (IOException e) {
-         System.out.println ("IO error:" + e );
-      }
-      
-
-      return 0;
+  public char get_action( char view[][] ) {
+    // REPLACE THIS CODE WITH AI TO CHOOSE ACTION
+    state.updateFromView(view);
+    return state.makeMove();
    }
 
-   void print_view( char view[][] )
+  void print_view( char view[][] )
    {
-      int i,j;
+    int i,j;
 
-      System.out.println("\n+-----+");
-      for( i=0; i < 5; i++ ) {
-         System.out.print("|");
-         for( j=0; j < 5; j++ ) {
-            if(( i == 2 )&&( j == 2 )) {
-               System.out.print('^');
-            }
-            else {
-               System.out.print( view[i][j] );
-            }
-         }
-         System.out.println("|");
-      }
-      System.out.println("+-----+");
+    System.out.println("\n+-----+");
+    for( i=0; i < 5; i++ ) {
+       System.out.print("|");
+       for( j=0; j < 5; j++ ) {
+          if(( i == 2 )&&( j == 2 )) {
+             System.out.print('^');
+          }
+          else {
+             System.out.print( view[i][j] );
+          }
+       }
+       System.out.println("|");
+    }
+    System.out.println("+-----+");
    }
 
    public static void main( String[] args )
