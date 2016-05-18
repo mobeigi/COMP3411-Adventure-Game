@@ -23,10 +23,11 @@ public class Agent {
 
       // REPLACE THIS CODE WITH AI TO CHOOSE ACTION
       state.updateFromView(view);
-      
-      
-      
-      
+
+
+
+
+      //TEMP
       int ch=0;
 
       System.out.print("Enter Action(s): ");
@@ -47,7 +48,7 @@ public class Agent {
          System.out.println ("IO error:" + e );
       }
       
-      
+
       return 0;
    }
 

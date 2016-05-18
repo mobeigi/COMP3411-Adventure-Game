@@ -68,29 +68,38 @@ public class State {
     //However, as our starting origin is (0,0), our total boundary should be at least 80*2 by 80*2 or 160x160
     for (int x = -80; x < 81; ++x) {
       for (int y = -80; y < 81; ++y) {
-        map.put(new Point2D.Double(x,y), new Character(OBSTACLE_UNKNOWN));
+        map.put(new Point2D.Double(x,y), OBSTACLE_UNKNOWN);
       }
     }
     
     //Initially, we always consider ourselves to be facing up
     direction = UP;
-    map.put(new Point2D.Double(0,0), new Character(DIRECTION_UP));
+    map.put(new Point2D.Double(0,0), DIRECTION_UP);
   }
   
   //Update map based on changes in view
   public void updateFromView(char view[][]) {
-    //Print view
-    /*
-    for (int i = 0; i < 5; ++i) {
-      for (int j = 0; j < 5; ++j) {
-        System.out.println(view[i][j]);
+    //We will treat the [0-4] indexes given by the view as offsets
+    //Thus, and x of 0 becomes -2, x of 1 becomes -1 and so on
+    //The player is always at (2,2) in the view, the center tile of the view
+    for (int x = 0; x < 5; ++x) {
+      for (int y = 0; y < 5; ++y) {
+        char curTile = view[x][y];
+
+        if (curTile == DIRECTION_DOWN || curTile == DIRECTION_LEFT || curTile == DIRECTION_RIGHT || curTile == DIRECTION_UP) {
+          //We already know our position, continue
+          continue;
+        }
+
+        //Update tile in map
+        map.put(new Point2D.Double(curX + (x-2), curY + (y-2)), curTile); //subtract 2 from view indexes to make them x,y offsets respectively
       }
     }
-    */
     
     //Debug
     this.printMap();
   }
+
   
   //Print map
   public void printMap() {
