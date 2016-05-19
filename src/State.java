@@ -175,7 +175,7 @@ public class State {
     if (pendingMoves.size() > 0) {
       //Todo: remove
       try {
-        Thread.sleep(1000);
+        Thread.sleep(250);
       } catch(InterruptedException ex) {
         Thread.currentThread().interrupt();
       }
@@ -186,6 +186,16 @@ public class State {
       return moveToMake;
     }
 
+    Dijkstra dj = new Dijkstra(this.map, new Point2D.Double(curX, curY), new Point2D.Double(0, 2));
+    dj.search();
+    LinkedList<Point2D.Double> path = dj.getPath();
+    System.out.println("Path size is: " + path.size());
+    for (int i = 0; i < path.size(); ++i) {
+      Point2D.Double element = path.get(i);
+      System.out.println("Element is: (" + element.getX() + "," + element.getY() + ")");
+    }
+
+    //todo: remove below manual movement
     int ch = 0;
 
     System.out.print("Enter Action(s): ");
