@@ -28,7 +28,6 @@ public class Dijkstra {
   public void search() {
     PQsort pqs = new PQsort();
     PriorityQueue<Pair<Point2D.Double, Integer>> pq = new PriorityQueue<Pair<Point2D.Double, Integer>>(10, pqs); //todo: fine tune initial size
-    int v, w;
 
     pq.add(new Pair<Point2D.Double, Integer>(this.start, 0)); //add start to pq
 

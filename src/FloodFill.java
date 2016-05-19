@@ -3,6 +3,8 @@
  *
  * Can take in any start and goal (as Points) and will tell you if its reachable.
  * Can be filtered to treat different obstacles as passable
+ *
+ * Based on psuedocode at: https://en.wikipedia.org/wiki/Flood_fill#Alternative_implementations
 */
 
 import java.util.*;

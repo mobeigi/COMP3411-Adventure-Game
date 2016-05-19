@@ -25,6 +25,7 @@ public class State {
   final static char OBSTACLE_WATER = '~';
   final static char OBSTACLE_WALL = '*';
   final static char OBSTACLE_UNKNOWN = '?';
+  final static char OBSTACLE_BOUNDARY = '.';
   
   //Tools
   final static char TOOL_AXE = 'a';
@@ -199,11 +200,19 @@ public class State {
     }
     */
 
+    /*
     FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), new Point2D.Double(0, 3));
     if (ff.isReachable(this.haveKey, this.haveAxe))
       System.out.println("REACHABLE!!!");
     else
       System.out.println("NOT REACHABLE!!!");
+    */
+
+    AStar a = new AStar(this.map, new Point2D.Double(curX, curY), new Point2D.Double(0, 2));
+    a.search();
+
+
+
 
     //todo: remove below manual movement
     int ch = 0;
@@ -315,6 +324,12 @@ public class State {
             //todo: handle this maybe
             System.out.println("CERTAIN DEATH IN updateFromMove()");
           }
+        }
+
+        if (nextTile == OBSTACLE_BOUNDARY) {
+          //Certain death
+          //todo: handle this maybe
+          System.out.println("CERTAIN DEATH IN updateFromMove()");
         }
 
         //Collect tools
