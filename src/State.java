@@ -31,7 +31,15 @@ public class State {
   final static char TOOL_STEPPING_STONE = 'o';
   final static char TOOL_STEPPING_STONE_PLACED = 'O';
   final static char TOOL_GOLD = 'g';
-  
+
+  //Moves
+  final static char MOVE_TURNLEFT = 'L';
+  final static char MOVE_TURNRIGHT = 'R';
+  final static char MOVE_GOFORWARD= 'F';
+  final static char MOVE_CHOPTREE = 'C';
+  final static char MOVE_UNLOCKDOOR = 'U';
+
+
   //Class variables
   private Map<Point2D.Double, Character> map;
   
@@ -45,6 +53,7 @@ public class State {
   private int curY;
   private int direction;  //direction we are currently facing
 
+  private int totalNumMoves; //includes NOP moves and C/U moves unlike pastMoves.size()
   private Stack<Character> pastMoves;
   private Queue<Character> pendingMoves;
   
@@ -54,7 +63,8 @@ public class State {
     haveKey = false;
     haveGold = false;
     num_stones_held = 0;
-    
+
+    totalNumMoves = 0;
     pastMoves = new Stack<Character>();
     pendingMoves = new LinkedList<Character>();
     
@@ -145,6 +155,37 @@ public class State {
   }
 
   public char makeMove() {
+
+    if (haveGold && pastMoves.size() > 0) {
+      System.out.println(Arrays.toString(pastMoves.toArray())); //todo temporary
+
+      //If we have the gold, we can do all our moves in reverse to get back home
+      char move = pastMoves.pop();
+
+      //Inverse L/R moves
+      if (move == MOVE_TURNLEFT)
+        move = MOVE_TURNRIGHT;
+      else if (move == MOVE_TURNRIGHT)
+        move = MOVE_TURNLEFT;
+
+      pendingMoves.add(move);
+    }
+
+    //Complete pending moves
+    if (pendingMoves.size() > 0) {
+      //Todo: remove
+      try {
+        Thread.sleep(1000);
+      } catch(InterruptedException ex) {
+        Thread.currentThread().interrupt();
+      }
+
+      ++totalNumMoves;
+      char moveToMake = pendingMoves.remove();
+      updateFromMove(moveToMake);
+      return moveToMake;
+    }
+
     int ch = 0;
 
     System.out.print("Enter Action(s): ");
@@ -165,6 +206,7 @@ public class State {
           case 'r':
           case 'c':
           case 'u':
+            ++totalNumMoves;
             updateFromMove((char) ch);
             return ((char) ch);
         }
@@ -179,11 +221,11 @@ public class State {
   //Update map based on changes from a move
   //todo: optimize switch statements for direction
   private void updateFromMove(char move) {
+    move = Character.toUpperCase(move); //moves should be uppercase
     char nextTile;
 
     switch (move) {
       case 'L':
-      case 'l':
         //Moved left
         switch (direction) {
           case UP:
@@ -201,9 +243,12 @@ public class State {
           default:
             assert (false); //todo remove
         }
+
+        if (!haveGold)
+          pastMoves.push(move); //save non-NOP moves into pastMoves
+
         break;
       case 'R':
-      case 'r':
         //Moved right
         switch (direction) {
           case UP:
@@ -221,9 +266,12 @@ public class State {
           default:
             assert (false); //todo remove
         }
+
+        if (!haveGold)
+          pastMoves.push(move); //save non-NOP moves into pastMoves
+
         break;
       case 'F':
-      case 'f':
         nextTile = getTileInFront();
 
         //Moving forwards against a wall, door or tree is a NOP
@@ -236,6 +284,8 @@ public class State {
           )
           break;
 
+        if (!haveGold)
+          pastMoves.push(move); //save non-NOP moves into pastMoves
 
         if (nextTile == OBSTACLE_WATER) {
           if (num_stones_held > 0) {
@@ -254,8 +304,16 @@ public class State {
           haveAxe = true;
         else if (nextTile == TOOL_KEY)
           haveKey = true;
-        else if (nextTile == TOOL_GOLD)
+        else if (nextTile == TOOL_GOLD) {
           haveGold = true;
+
+          //If using the reverse path strategy, we need to do a 180 degree spin
+          //So we are facing the previous tile before we carry out our pastmoves in reverse
+          pastMoves.push(MOVE_TURNLEFT);
+          pastMoves.push(MOVE_TURNLEFT);
+
+          //todo: at this point we could also potentially optimize pastMoves by removing redundant L/R moves
+        }
 
         //We moved forward, update our curX, curY
         switch (direction) {
@@ -277,10 +335,8 @@ public class State {
 
         break;
       case 'C':
-      case 'c':
         break;
       case 'U':
-      case 'u':
         break;
     }
   }
@@ -294,7 +350,7 @@ public class State {
     String strKey = haveKey ? "true" : "false";
     String strAxe = haveAxe ? "true" : "false";
 
-    System.out.print("Gold: " + strGold + "| Key: " + haveKey + "| Axe: " + haveAxe + "| Stepping Stones: " + num_stones_held);
+    System.out.print("Total moves: " + totalNumMoves + "| Gold: " + strGold + "| Key: " + haveKey + "| Axe: " + haveAxe + "| Stepping Stones: " + num_stones_held);
     System.out.print("\n");
 
     //Traverse map showing 12by12 grid from top left to bottom right
