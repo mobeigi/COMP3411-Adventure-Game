@@ -82,6 +82,30 @@ public class State {
     //todo remove
     System.out.println("curX: " + curX + ", curY: " + curY);
 
+
+    //Determine how many times to rotate our view so it is facing UP based on our initial map
+    //This is required so we can use the same map update code regardless of the views direction
+    int numTimesToRotate = 0;
+
+    switch(direction) {
+      case UP:
+        //Already facing correct direction
+        break;
+      case DOWN:
+        numTimesToRotate = 2;
+        break;
+      case LEFT:
+        numTimesToRotate = 3;
+        break;
+      case RIGHT:
+        numTimesToRotate = 1;
+        break;
+    }
+
+    for (int i = 0; i < numTimesToRotate; ++i) {
+      view = rotateCW(view);
+    }
+
     //We will treat the [0-4] indexes given by the view as offsets
     //Thus, and x of 0 becomes -2, x of 1 becomes -1 and so on
     //The player is always at (2,2) in the view, the center tile of the view
@@ -91,7 +115,7 @@ public class State {
         int xFinal = curX + (j - 2);
         int yFinal = curY + (2 - i);
 
-        //If this is the players tile
+        //If this is the players tile, show the correct directional character
         if (i == 2 && j == 2) {
           switch(direction) {
             case UP:
@@ -116,8 +140,7 @@ public class State {
     }
     
     //todo: remove this
-    //this.printMap();
-    this.printMapRotating();
+    this.printMap();
   }
 
   public char makeMove()
@@ -215,18 +238,13 @@ public class State {
 
 
   //Print map (rotating map)
-  public void printMapRotating() {
+  public void printMap() {
     System.out.print("\nRotating Map\n");
 
     //Traverse map showing 12by12 grid from top left to bottom right
     for (int y = 12; y >= -12; --y) {
       for (int x = -12; x <= 12; ++x) {
         char curTile = map.get(new Point2D.Double(x, y));
-
-        //if (curTile == DIRECTION_DOWN || curTile == DIRECTION_LEFT || curTile == DIRECTION_RIGHT || curTile == DIRECTION_UP) {
-        //  curTile = DIRECTION_UP;
-        //}
-
         System.out.print(curTile);
       }
 
@@ -234,54 +252,7 @@ public class State {
     }
   }
 
-  //Print map (non-rotating map)
-  public void printMap() {
-    int x, y;
-    x = y = 0;
-    char[][] tempMap = new char[12][12];
-
-    for (int i = -6; i < 6; ++i) {
-      for (int j = -6; j < 6; ++j) {
-        tempMap[x][y++] = map.get(new Point2D.Double(i,j));
-      }
-      ++x;
-      y = 0;
-    }
-
-    //Determine how many times to rotate so it shows the non-rotating version
-    int numTimesToRotate = 0;
-
-    switch(direction) {
-      case UP:
-        break;
-      case DOWN:
-        numTimesToRotate = 2;
-        break;
-      case LEFT:
-        numTimesToRotate = 1;
-        break;
-      case RIGHT:
-        numTimesToRotate = 3;
-        break;
-    }
-
-    char[][] finalMap = tempMap;
-
-    for (int i = 0; i < numTimesToRotate; ++i) {
-      tempMap = rotateCW(tempMap);
-      finalMap = tempMap;
-    }
-
-    System.out.print("\nNon-rotating Map\n");
-
-    for (int i2 = 0; i2 < 12; ++i2) {
-      for (int j2 = 0; j2 < 12; ++j2) {
-        System.out.print(finalMap[i2][j2]);
-      }
-      System.out.print('\n');
-    }
-  }
-
+  //Helper function to rotate matrix clockwise
   //From: https://stackoverflow.com/a/2800033/1800854
   private static char[][] rotateCW(char[][] mat) {
     final int M = mat.length;
