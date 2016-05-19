@@ -19,6 +19,7 @@ public class State {
   final static char DIRECTION_RIGHT = '>';
   
   //Obstacles
+  final static char OBSTACLE_SPACE = ' ';
   final static char OBSTACLE_TREE = 'T';
   final static char OBSTACLE_DOOR = '-';
   final static char OBSTACLE_WATER = '~';
@@ -156,6 +157,7 @@ public class State {
 
   public char makeMove() {
 
+    //Check 1: Do we have gold
     if (haveGold && pastMoves.size() > 0) {
       System.out.println(Arrays.toString(pastMoves.toArray())); //todo temporary
 
@@ -186,6 +188,7 @@ public class State {
       return moveToMake;
     }
 
+    /*
     Dijkstra dj = new Dijkstra(this.map, new Point2D.Double(curX, curY), new Point2D.Double(0, 2));
     dj.search();
     LinkedList<Point2D.Double> path = dj.getPath();
@@ -194,6 +197,13 @@ public class State {
       Point2D.Double element = path.get(i);
       System.out.println("Element is: (" + element.getX() + "," + element.getY() + ")");
     }
+    */
+
+    FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), new Point2D.Double(0, 3));
+    if (ff.isReachable(this.haveKey, this.haveAxe))
+      System.out.println("REACHABLE!!!");
+    else
+      System.out.println("NOT REACHABLE!!!");
 
     //todo: remove below manual movement
     int ch = 0;
