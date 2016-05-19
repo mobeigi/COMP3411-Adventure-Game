@@ -44,7 +44,7 @@ public class State {
   private int curX;
   private int curY;
   private int direction;  //direction we are currently facing
- 
+
   private Stack<Character> pastMoves;
   private Queue<Character> pendingMoves;
   
@@ -63,18 +63,18 @@ public class State {
     
     //Prefill map with unknowns for reasonable bounds
     map = new HashMap<Point2D.Double, Character>();
-     
+
     //You may assume that the specified environment is no larger than 80 by 80
     //However, as our starting origin is (0,0), our total boundary should be at least 80*2 by 80*2 or 160x160
     for (int x = -80; x < 81; ++x) {
       for (int y = -80; y < 81; ++y) {
-        map.put(new Point2D.Double(x,y), OBSTACLE_UNKNOWN);
+        map.put(new Point2D.Double(x, y), OBSTACLE_UNKNOWN);
       }
     }
     
     //Initially, we always consider ourselves to be facing up
     direction = UP;
-    map.put(new Point2D.Double(0,0), DIRECTION_UP);
+    map.put(new Point2D.Double(0, 0), DIRECTION_UP);
   }
   
   //Update map based on changes in view
@@ -87,7 +87,7 @@ public class State {
     //This is required so we can use the same map update code regardless of the views direction
     int numTimesToRotate = 0;
 
-    switch(direction) {
+    switch (direction) {
       case UP:
         //Already facing correct direction
         break;
@@ -100,6 +100,8 @@ public class State {
       case RIGHT:
         numTimesToRotate = 1;
         break;
+      default:
+        assert(false); //todo remove
     }
 
     for (int i = 0; i < numTimesToRotate; ++i) {
@@ -117,7 +119,7 @@ public class State {
 
         //If this is the players tile, show the correct directional character
         if (i == 2 && j == 2) {
-          switch(direction) {
+          switch (direction) {
             case UP:
               curTile = DIRECTION_UP;
               break;
@@ -135,7 +137,6 @@ public class State {
 
         //Update tile in map
         map.put(new Point2D.Double(xFinal, yFinal), curTile);
-        //System.out.println("Placed at ("+(xFinal)+","+ (yFinal)+"): " + curTile);
       }
     }
     
@@ -143,40 +144,48 @@ public class State {
     this.printMap();
   }
 
-  public char makeMove()
-  {
-      int ch=0;
+  public char makeMove() {
+    int ch = 0;
 
-      System.out.print("Enter Action(s): ");
+    System.out.print("Enter Action(s): ");
 
-      try {
-          while ( ch != -1 ) {
-              // read character from keyboard
-              ch  = System.in.read();
+    try {
+      while (ch != -1) {
+        // read character from keyboard
+        ch = System.in.read();
 
-              switch( ch ) { // if character is a valid action, return it
-                  case 'F': case 'L': case 'R': case 'C': case 'U':
-                  case 'f': case 'l': case 'r': case 'c': case 'u':
-                    updateFromMove((char)ch);
-                    return((char) ch );
-              }
-          }
+        switch (ch) { // if character is a valid action, return it
+          case 'F':
+          case 'L':
+          case 'R':
+          case 'C':
+          case 'U':
+          case 'f':
+          case 'l':
+          case 'r':
+          case 'c':
+          case 'u':
+            updateFromMove((char) ch);
+            return ((char) ch);
+        }
       }
-      catch (IOException e) {
-          System.out.println ("IO error:" + e );
-      }
+    } catch (IOException e) {
+      System.out.println("IO error:" + e);
+    }
 
-      return 0;
+    return 0;
   }
 
   //Update map based on changes from a move
   //todo: optimize switch statements for direction
-  private void updateFromMove(char move){
-    switch(move) {
+  private void updateFromMove(char move) {
+    char nextTile;
+
+    switch (move) {
       case 'L':
       case 'l':
         //Moved left
-        switch(direction) {
+        switch (direction) {
           case UP:
             direction = LEFT;
             break;
@@ -189,12 +198,14 @@ public class State {
           case RIGHT:
             direction = UP;
             break;
+          default:
+            assert (false); //todo remove
         }
         break;
       case 'R':
       case 'r':
         //Moved right
-        switch(direction) {
+        switch (direction) {
           case UP:
             direction = RIGHT;
             break;
@@ -207,12 +218,47 @@ public class State {
           case RIGHT:
             direction = DOWN;
             break;
+          default:
+            assert (false); //todo remove
         }
         break;
       case 'F':
       case 'f':
+        nextTile = getTileInFront();
+
+        //Moving forwards against a wall, door or tree is a NOP
+        //We have to use C and U to remove doors/trees and walls cant be moved into at all
+        //When C and U moved are used, the view provided will reflect the changes
+        //Our curX, curY do not change
+        if ((nextTile == OBSTACLE_WALL) ||
+          (nextTile == OBSTACLE_DOOR) ||
+          (nextTile == OBSTACLE_TREE)
+          )
+          break;
+
+
+        if (nextTile == OBSTACLE_WATER) {
+          if (num_stones_held > 0) {
+            --num_stones_held; //we will place a stone on the water
+          } else {
+            //Certain death
+            //todo: handle this maybe
+            System.out.println("CERTAIN DEATH IN updateFromMove()");
+          }
+        }
+
+        //Collect tools
+        if (nextTile == TOOL_STEPPING_STONE)
+          ++num_stones_held;
+        else if (nextTile == TOOL_AXE)
+          haveAxe = true;
+        else if (nextTile == TOOL_KEY)
+          haveKey = true;
+        else if (nextTile == TOOL_GOLD)
+          haveGold = true;
+
         //We moved forward, update our curX, curY
-        switch(direction) {
+        switch (direction) {
           case UP:
             curY += 1;
             break;
@@ -225,7 +271,10 @@ public class State {
           case RIGHT:
             curX += 1;
             break;
+          default:
+            assert (false); //todo remove
         }
+
         break;
       case 'C':
       case 'c':
@@ -236,10 +285,17 @@ public class State {
     }
   }
 
-
   //Print map (rotating map)
-  public void printMap() {
+  private void printMap() {
     System.out.print("\nRotating Map\n");
+    System.out.print("------------------------\n");
+
+    String strGold = haveGold ? "true" : "false";
+    String strKey = haveKey ? "true" : "false";
+    String strAxe = haveAxe ? "true" : "false";
+
+    System.out.print("Gold: " + strGold + "| Key: " + haveKey + "| Axe: " + haveAxe + "| Stepping Stones: " + num_stones_held);
+    System.out.print("\n");
 
     //Traverse map showing 12by12 grid from top left to bottom right
     for (int y = 12; y >= -12; --y) {
@@ -260,9 +316,36 @@ public class State {
     char[][] ret = new char[N][M];
     for (int r = 0; r < M; r++) {
       for (int c = 0; c < N; c++) {
-        ret[c][M-1-r] = mat[r][c];
+        ret[c][M - 1 - r] = mat[r][c];
       }
     }
     return ret;
   }
+
+  //Get the tile directly in front of us
+  private char getTileInFront() {
+    int nextX = curX;
+    int nextY = curY;
+
+    switch (direction) {
+      case UP:
+        nextY += 1;
+        break;
+      case DOWN:
+        nextY -= 1;
+        break;
+      case LEFT:
+        nextX -= 1;
+        break;
+      case RIGHT:
+        nextX += 1;
+        break;
+      default:
+        assert(false); //todo remove
+    }
+
+    //Get element at (nextX, nextY)
+    return this.map.get(new Point2D.Double(nextX, nextY));
+  }
+
 }
