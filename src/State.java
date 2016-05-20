@@ -211,7 +211,7 @@ public class State {
         if (ff.isReachable(this.haveKey, this.haveAxe)) {
           //Yes: Do A* traversal to gold
           AStar a = new AStar(this.map, new Point2D.Double(curX, curY), goldLocation);
-          a.search();
+          a.search(this.haveKey, this.haveAxe);
 
           //Get optimal path
           LinkedList<Point2D.Double> path = a.getPath();
@@ -237,12 +237,17 @@ public class State {
             //Update curDirection to reflect alignMoves changes
             curDirection = directionHeaded;
 
-            //todo: Tree/etc check here
+            //Check if we need to cut down a tree or unlock a door
+            char nextTile = getTileInFront(element, curDirection);
+            if (nextTile == OBSTACLE_TREE) {
+              pendingMoves.add(MOVE_CHOPTREE);
+            } else if (nextTile == OBSTACLE_DOOR) {
+              pendingMoves.add(MOVE_UNLOCKDOOR);
+            }
 
             //Now we also need 1 forward move
             pendingMoves.add(MOVE_GOFORWARD);
           }
-
 
         } else {
 
@@ -256,7 +261,7 @@ public class State {
     if (!pendingMoves.isEmpty()) {  //this check is required as pendingMoves may change after the first check
       //Todo: remove
       try {
-        Thread.sleep(750);
+        Thread.sleep(250);
       } catch(InterruptedException ex) {
         Thread.currentThread().interrupt();
       }
@@ -357,7 +362,8 @@ public class State {
 
         break;
       case 'F':
-        nextTile = getTileInFront();
+        //Get tile directly in front of us, this is the tile we will be moving onto in this next move
+        nextTile = getTileInFront(new Point2D.Double(curX, curY));
 
         //Moving forwards against a wall, door or tree is a NOP
         //We have to use C and U to remove doors/trees and walls cant be moved into at all
@@ -469,12 +475,16 @@ public class State {
     return ret;
   }
 
-  //Get the tile directly in front of us
-  private char getTileInFront() {
-    int nextX = curX;
-    int nextY = curY;
+  //Get the tile directly in front of the provided tile
+  private char getTileInFront(Point2D.Double tile) {
+    return getTileInFront(tile, this.direction);
+  }
 
-    switch (direction) {
+  private char getTileInFront(Point2D.Double tile, int curDirection) {
+    int nextX = (int)tile.getX();
+    int nextY = (int)tile.getY();
+
+    switch (curDirection) {
       case UP:
         nextY += 1;
         break;
