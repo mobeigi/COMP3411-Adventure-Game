@@ -210,45 +210,7 @@ public class State {
         FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), goldLocation);
         if (ff.isReachable(this.haveKey, this.haveAxe)) {
           //Yes: Do A* traversal to gold
-          AStar a = new AStar(this.map, new Point2D.Double(curX, curY), goldLocation);
-          a.search(this.haveKey, this.haveAxe);
-
-          //Get optimal path
-          LinkedList<Point2D.Double> path = a.getPath();
-          path.addLast(new Point2D.Double(curX, curY)); //add starting position to end of path (before reversal)
-
-          //Iterate through moves in reverse so they are presented as moves from start -> goal
-          //We do not process the final (landing) tile as it is our destination, ie dont process i = 0
-          int curDirection = this.direction;
-
-          for (int i = path.size() - 1; i >= 1; --i) {
-            Point2D.Double element = path.get(i);
-
-            //Check what direction we are going in (UP, DOWN, LEFT, RIGHT)
-            //We compare adjacent tiles at i and (i-1)
-            int directionHeaded = getAdjacentTileDirection(element, path.get(i - 1));
-
-            //Get list of moves needed before we go forward (ie do we need to rotate, use L/R moves?)
-            LinkedList<Character> alignMoves = getAlignmentMoves(curDirection, directionHeaded);
-
-            //Add alignment moves to pendingMoves
-            pendingMoves.addAll(alignMoves);
-
-            //Update curDirection to reflect alignMoves changes
-            curDirection = directionHeaded;
-
-            //Check if we need to cut down a tree or unlock a door
-            char nextTile = getTileInFront(element, curDirection);
-            if (nextTile == OBSTACLE_TREE) {
-              pendingMoves.add(MOVE_CHOPTREE);
-            } else if (nextTile == OBSTACLE_DOOR) {
-              pendingMoves.add(MOVE_UNLOCKDOOR);
-            }
-
-            //Now we also need 1 forward move
-            pendingMoves.add(MOVE_GOFORWARD);
-          }
-
+          addAStarPathToPendingMoves(new Point2D.Double(curX, curY), goldLocation, this.direction, this.haveKey, this.haveAxe);
         } else {
 
         }
@@ -590,4 +552,47 @@ public class State {
 
     return result;
   }
+
+  //Using A*, calculated the min path from start to end, given curDirection, hasKey and hasAxe
+  //Then calculates all moves needed to reach destination and adds them to the pending moves queue
+  private void addAStarPathToPendingMoves(Point2D.Double start, Point2D.Double end, int curDirection, boolean hasKey, boolean hasAxe) {
+    //New AStar search
+    AStar a = new AStar(this.map, start, end);
+    a.search(hasKey, hasAxe);
+
+    //Get optimal path
+    LinkedList<Point2D.Double> path = a.getPath();
+    path.addLast(start); //add starting position to end of path (before reversal)
+
+    //Iterate through moves in reverse so they are presented as moves from start -> goal
+    //We do not process the final (landing) tile as it is our destination, ie dont process i = 0
+    for (int i = path.size() - 1; i >= 1; --i) {
+      Point2D.Double element = path.get(i);
+
+      //Check what direction we are going in (UP, DOWN, LEFT, RIGHT)
+      //We compare adjacent tiles at i and (i-1)
+      int directionHeaded = getAdjacentTileDirection(element, path.get(i - 1));
+
+      //Get list of moves needed before we go forward (ie do we need to rotate, use L/R moves?)
+      LinkedList<Character> alignMoves = getAlignmentMoves(curDirection, directionHeaded);
+
+      //Add alignment moves to pendingMoves
+      this.pendingMoves.addAll(alignMoves);
+
+      //Update curDirection to reflect alignMoves changes
+      curDirection = directionHeaded;
+
+      //Check if we need to cut down a tree or unlock a door
+      char nextTile = getTileInFront(element, curDirection);
+      if (nextTile == OBSTACLE_TREE) {
+        this.pendingMoves.add(MOVE_CHOPTREE);
+      } else if (nextTile == OBSTACLE_DOOR) {
+        this.pendingMoves.add(MOVE_UNLOCKDOOR);
+      }
+
+      //Now we also need 1 forward move
+      this.pendingMoves.add(MOVE_GOFORWARD);
+    }
+  }
+
 }
