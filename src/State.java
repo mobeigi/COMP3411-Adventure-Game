@@ -187,21 +187,24 @@ public class State {
 
     //Stage 1
     //If we have no pending moves, then we must decide what to do
+    boolean moveMade = false; //true when move made for this turn
     if (pendingMoves.isEmpty()) {
 
       //Stage 2: Do we have gold
       //Yes: Do A* traversal to starting location, aka (0,0)
       if (haveGold) {
         addAStarPathToPendingMoves(new Point2D.Double(curX, curY), new Point2D.Double(0, 0), this.direction, this.haveKey, this.haveAxe);
+        moveMade = true;
       }
 
       //Stage 3: Do we see gold?
-      if (goldVisible) {
+      if (goldVisible && !moveMade) {
         //Yes: Can we reach the gold? (from our current position with current inventory)
         FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), goldLocation);
         if (ff.isReachable(this.haveKey, this.haveAxe)) {
           //Yes: Do A* traversal to gold
           addAStarPathToPendingMoves(new Point2D.Double(curX, curY), goldLocation, this.direction, this.haveKey, this.haveAxe);
+          moveMade = true;
         } else {
           //Now we do some theoretical reachability tests
           //If we don't have the key, see if we can reach gold with a key
@@ -227,8 +230,10 @@ public class State {
       }
 
       //Stage 4: Do we know location of a needed resources?
+      //Note that if we fail to find a key (ie no moveMade = true), we can still try to find an axe
       //todo: add logic to pick closest (man dist) one rather than breaking
-      if (needKey && !keyLocations.isEmpty()) {
+      if (needKey && !keyLocations.isEmpty() && !moveMade) {
+        //Yes: Check if reachable with current inventory and traverse to it if so
         for (int i = 0; i < keyLocations.size(); ++i) {
           Point2D.Double location = keyLocations.get(i);
 
@@ -243,12 +248,14 @@ public class State {
           if (ff.isReachable(this.haveKey, this.haveAxe)) {
             //Do A* traversal to location
             addAStarPathToPendingMoves(new Point2D.Double(curX, curY), location, this.direction, this.haveKey, this.haveAxe);
+            moveMade = true;
             break; //any one will do
           }
         }
       }
 
-      if (needAxe && !axeLocations.isEmpty()) {
+      if (needAxe && !axeLocations.isEmpty() && !moveMade) {
+        //Yes: Check if reachable with current inventory and traverse to it if so
         for (int i = 0; i < axeLocations.size(); ++i) {
           Point2D.Double location = axeLocations.get(i);
 
@@ -263,10 +270,13 @@ public class State {
           if (ff.isReachable(this.haveKey, this.haveAxe)) {
             //Do A* traversal to location
             addAStarPathToPendingMoves(new Point2D.Double(curX, curY), location, this.direction, this.haveKey, this.haveAxe);
+            moveMade = true;
             break; //any one will do
           }
         }
       }
+
+      //State 5:
 
 
     }
@@ -275,7 +285,7 @@ public class State {
     //Or decisions have been made above which added pending moves for us
     //Lets complete pending moves
     if (!pendingMoves.isEmpty()) {  //this check is required as pendingMoves may change after the first check
-      //Todo: remove
+      //Todo: remove befor submission
       try {
         Thread.sleep(250);
       } catch(InterruptedException ex) {
