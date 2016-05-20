@@ -180,7 +180,7 @@ public class State {
     }
     
     //todo: remove this
-    this.printMap();
+    //this.printMap();
   }
 
   public char makeMove() {
@@ -276,8 +276,16 @@ public class State {
         }
       }
 
-      //State 5:
+      //State 5: Explore to reveal unknown blocks
+      SpiralSeek s = new SpiralSeek(this.map, new Point2D.Double(curX, curY));
+      Point2D.Double explorationDestination = s.getTile(this.haveKey, this.haveAxe);
 
+      //If the spiralseek successfully found a destination, it is guaranteed to be passable/reachable
+      if (explorationDestination != new Point2D.Double(curX, curY)) {
+        //Do A* traversal to exploration destination
+        addAStarPathToPendingMoves(new Point2D.Double(curX, curY), explorationDestination, this.direction, this.haveKey, this.haveAxe);
+        moveMade = true;
+      }
 
     }
 
@@ -285,12 +293,12 @@ public class State {
     //Or decisions have been made above which added pending moves for us
     //Lets complete pending moves
     if (!pendingMoves.isEmpty()) {  //this check is required as pendingMoves may change after the first check
-      //Todo: remove befor submission
-      try {
-        Thread.sleep(250);
-      } catch(InterruptedException ex) {
-        Thread.currentThread().interrupt();
-      }
+      //Todo: remove before submission, slow down moves for us
+      //try {
+      //  Thread.sleep(10);
+      //} catch(InterruptedException ex) {
+      //  Thread.currentThread().interrupt();
+      //}
 
       ++totalNumMoves;
       char moveToMake = pendingMoves.remove();
@@ -463,9 +471,9 @@ public class State {
     System.out.print("Total moves: " + totalNumMoves + "| Gold: " + strGold + "| Key: " + haveKey + "| Axe: " + haveAxe + "| Stepping Stones: " + num_stones_held);
     System.out.print("\n");
 
-    //Traverse map showing 12by12 grid from top left to bottom right
-    for (int y = 12; y >= -12; --y) {
-      for (int x = -12; x <= 12; ++x) {
+    //Traverse map showing grid from top left to bottom right
+    for (int y = 30; y >= -30; --y) {
+      for (int x = -30; x <= 30; ++x) {
         char curTile = map.get(new Point2D.Double(x, y));
         System.out.print(curTile);
       }
