@@ -8,10 +8,10 @@ public class State {
   
   //Direction (facing)
   final static int UP = 0;
-  final static int DOWN = 1;
-  final static int LEFT = 2;
-  final static int RIGHT = 3;
-  
+  final static int RIGHT = 1;
+  final static int DOWN = 2;
+  final static int LEFT = 3;
+
   //Direction characters
   final static char DIRECTION_UP = '^';
   final static char DIRECTION_DOWN = 'v';
@@ -44,7 +44,8 @@ public class State {
 
   //Class variables
   private Map<Point2D.Double, Character> map;
-  
+
+  //Tool inventory
   private boolean haveAxe;
   private boolean haveKey;
   private boolean haveGold;
@@ -58,6 +59,11 @@ public class State {
   private int totalNumMoves; //includes NOP moves and C/U moves unlike pastMoves.size()
   private Stack<Character> pastMoves;
   private Queue<Character> pendingMoves;
+
+  private boolean goldVisible;
+  Point2D.Double goldLocation; //coordinate of gold once it has been found
+  LinkedList<Point2D.Double> axeLocations;
+  LinkedList<Point2D.Double> keyLocations;
   
   public State() {
     //Init variables
@@ -87,6 +93,10 @@ public class State {
     //Initially, we always consider ourselves to be facing up
     direction = UP;
     map.put(new Point2D.Double(0, 0), DIRECTION_UP);
+
+    goldVisible = false;
+    axeLocations = new LinkedList<Point2D.Double>();
+    keyLocations = new LinkedList<Point2D.Double>();
   }
   
   //Update map based on changes in view
@@ -147,8 +157,22 @@ public class State {
           }
         }
 
+        Point2D.Double newTile = new Point2D.Double(xFinal, yFinal);
+
+        //Save the locations of important tools
+        if (curTile == TOOL_GOLD && !goldVisible) {
+          goldLocation = newTile;
+          goldVisible = true;
+        }
+        else if (curTile == TOOL_AXE && !axeLocations.contains(newTile)) {
+          axeLocations.add(newTile);
+        }
+        else if (curTile == TOOL_KEY && !keyLocations.contains(newTile)) {
+          keyLocations.add(newTile);
+        }
+
         //Update tile in map
-        map.put(new Point2D.Double(xFinal, yFinal), curTile);
+        map.put(newTile, curTile);
       }
     }
     
@@ -158,27 +182,81 @@ public class State {
 
   public char makeMove() {
 
-    //Check 1: Do we have gold
-    if (haveGold && pastMoves.size() > 0) {
-      System.out.println(Arrays.toString(pastMoves.toArray())); //todo temporary
+    //Stage 1
+    //If we have no pending moves, then we must decide what to do
+    if (pendingMoves.isEmpty()) {
 
-      //If we have the gold, we can do all our moves in reverse to get back home
-      char move = pastMoves.pop();
+      //Stage 1: Do we have gold
+      //Yes: add past moved to history (in reverse)
+      //todo: in cases where total moves > 5000, we need to do A* to (0,0) instead
+      if (haveGold && pastMoves.size() > 0) {
+        //Add all past moves to pending moves together
+        while (!pastMoves.isEmpty()) {
+          char move = pastMoves.pop();
 
-      //Inverse L/R moves
-      if (move == MOVE_TURNLEFT)
-        move = MOVE_TURNRIGHT;
-      else if (move == MOVE_TURNRIGHT)
-        move = MOVE_TURNLEFT;
+          //Inverse L/R moves
+          if (move == MOVE_TURNLEFT)
+            move = MOVE_TURNRIGHT;
+          else if (move == MOVE_TURNRIGHT)
+            move = MOVE_TURNLEFT;
 
-      pendingMoves.add(move);
+          pendingMoves.add(move);
+        }
+      }
+
+      //Stage 2: Do we see gold?
+      if (goldVisible) {
+        //Yes: Can we reach the gold? (from our current position with current inventory)
+        FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), goldLocation);
+        if (ff.isReachable(this.haveKey, this.haveAxe)) {
+          //Yes: Do A* traversal to gold
+          AStar a = new AStar(this.map, new Point2D.Double(curX, curY), goldLocation);
+          a.search();
+
+          //Get optimal path
+          LinkedList<Point2D.Double> path = a.getPath();
+          path.addLast(new Point2D.Double(curX, curY)); //add starting position to end of path (before reversal)
+
+          //Iterate through moves in reverse so they are presented as moves from start -> goal
+          //We do not process the final (landing) tile as it is our destination, ie dont process i = 0
+          int curDirection = this.direction;
+
+          for (int i = path.size() - 1; i >= 1; --i) {
+            Point2D.Double element = path.get(i);
+
+            //Check what direction we are going in (UP, DOWN, LEFT, RIGHT)
+            //We compare adjacent tiles at i and (i-1)
+            int directionHeaded = getAdjacentTileDirection(element, path.get(i - 1));
+
+            //Get list of moves needed before we go forward (ie do we need to rotate, use L/R moves?)
+            LinkedList<Character> alignMoves = getAlignmentMoves(curDirection, directionHeaded);
+
+            //Add alignment moves to pendingMoves
+            pendingMoves.addAll(alignMoves);
+
+            //Update curDirection to reflect alignMoves changes
+            curDirection = directionHeaded;
+
+            //todo: Tree/etc check here
+
+            //Now we also need 1 forward move
+            pendingMoves.add(MOVE_GOFORWARD);
+          }
+
+
+        } else {
+
+        }
+      }
     }
 
-    //Complete pending moves
-    if (pendingMoves.size() > 0) {
+    //If we reach this stage, we already had pending moves
+    //Or decisions have been made above which added pending moves for us
+    //Lets complete pending moves
+    if (!pendingMoves.isEmpty()) {  //this check is required as pendingMoves may change after the first check
       //Todo: remove
       try {
-        Thread.sleep(250);
+        Thread.sleep(750);
       } catch(InterruptedException ex) {
         Thread.currentThread().interrupt();
       }
@@ -188,31 +266,9 @@ public class State {
       updateFromMove(moveToMake);
       return moveToMake;
     }
-
-    /*
-    Dijkstra dj = new Dijkstra(this.map, new Point2D.Double(curX, curY), new Point2D.Double(0, 2));
-    dj.search();
-    LinkedList<Point2D.Double> path = dj.getPath();
-    System.out.println("Path size is: " + path.size());
-    for (int i = 0; i < path.size(); ++i) {
-      Point2D.Double element = path.get(i);
-      System.out.println("Element is: (" + element.getX() + "," + element.getY() + ")");
+    else {
+      //todo: handle, this should never ever happen...for now it might though
     }
-    */
-
-    /*
-    FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), new Point2D.Double(0, 2));
-    if (ff.isReachable(this.haveKey, this.haveAxe))
-      System.out.println("REACHABLE!!!");
-    else
-      System.out.println("NOT REACHABLE!!!");
-    */
-
-    //AStar a = new AStar(this.map, new Point2D.Double(curX, curY), new Point2D.Double(0, 2));
-    //a.search();
-
-
-
 
     //todo: remove below manual movement
     int ch = 0;
@@ -453,4 +509,75 @@ public class State {
             );
   }
 
+  //Returns adjacent tile direction between two tiles, either UP, DOWN, LEFT, RIGHT
+  //Returns -1 if non-adjacent tiles
+  private int getAdjacentTileDirection(Point2D.Double start, Point2D.Double goal) {
+    int xDiff = (int)(goal.getX() - start.getX());
+    int yDiff = (int)(goal.getY() - start.getY());
+    int retDirection = -1;
+
+    if (xDiff != 0) {
+      //Either left or right
+      if (xDiff < 0) {
+        retDirection = LEFT;
+      } else { //>0
+        retDirection = RIGHT;
+      }
+    }
+    else if (yDiff != 0) {
+      //Either up or down
+      if (yDiff < 0) {
+        retDirection = DOWN;
+      }
+      else { //>0
+        retDirection = UP;
+      }
+    }
+
+    return retDirection;
+  }
+
+  //Returns moves that result in player facing the final direction based on initial direction
+  //Always returns the minimum costing moves (least number of moves to face final diretion)
+  private LinkedList<Character> getAlignmentMoves(int initialDirection, int finalDirection) {
+    LinkedList<Character> l = new LinkedList<Character>();
+
+    if (initialDirection == finalDirection) //no moves need, already aligned
+      return l;
+
+    int numLeftMoves, numRightMoves;
+
+    //Calculate number of left and right moves
+    if (initialDirection > finalDirection) {
+      numLeftMoves = mod(initialDirection - finalDirection, 4);
+      numRightMoves = mod(4 - numLeftMoves, 4);
+    }
+    else { //finalDirection > initialDirection
+      numRightMoves = finalDirection - initialDirection;
+      numLeftMoves = mod(4 - numRightMoves, 4);
+    }
+
+    //Determine best result (the one with less overall moves)
+    if (numLeftMoves <= numRightMoves) {
+      //Left moves are better or the same
+      for (int i = 0; i < numLeftMoves; ++i)
+        l.add(MOVE_TURNLEFT);
+
+    } else { //right moves are better
+      for (int i = 0; i < numRightMoves; ++i)
+        l.add(MOVE_TURNRIGHT);
+    }
+
+    return l;
+  }
+
+  //todo: make static?
+  //Modulo function (does not produce negatives)
+  private int mod(int x, int y) {
+    int result = x % y;
+    if (result < 0)
+      result += y;
+
+    return result;
+  }
 }

@@ -71,15 +71,17 @@ public class AStar {
     while (!openSet.isEmpty()) {
       Point2D.Double currentTile = openSet.remove();
 
+      /*
+      //todo: remove, debugging
       Boolean b = (currentTile == this.goal);
       String str3 = b.toString();
       System.out.println("Current Tile: ("+ currentTile.getX() + "," + currentTile.getY() +"), matchesGoal:" + str3 );
+      */
 
       //Check if current tile is the goal tile
       //todo: (currentTile == this.goal) comparison does not work! why?
       if (currentTile.getX() == goal.getX() && currentTile.getY() == goal.getY()) {
-        //todo reconstruct path
-        System.out.println("WE FOUND THE PATH!!!");
+        //Return here, at this stage, getPath() can be called to reconstruct the path
         return;
       }
 
@@ -142,5 +144,20 @@ public class AStar {
 
   private int ManhattenDistanceHeuristic(Point2D.Double start, Point2D.Double goal) {
     return Math.abs((int)start.getX() - (int)goal.getX()) + Math.abs((int)start.getY() - (int)goal.getY());
+  }
+
+  //Returns path traversed
+  //Call search() before this
+  public LinkedList<Point2D.Double> getPath() {
+    LinkedList<Point2D.Double> sequence = new LinkedList<Point2D.Double>();
+    Point2D.Double u = this.goal;
+
+    while (this.cameFrom.get(u) != null) {
+      sequence.add(u);
+
+      u = this.cameFrom.get(u);
+    }
+
+    return sequence;
   }
 }
