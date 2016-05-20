@@ -53,7 +53,6 @@ public class State {
 
   private boolean needKey;
   private boolean needAxe;
-  private boolean needKeyAndAxe;
 
   private int curX;
   private int curY;
@@ -76,7 +75,6 @@ public class State {
 
     needKey = false;
     needAxe = false;
-    needKeyAndAxe = false;
 
     totalNumMoves = 0;
     pendingMoves = new LinkedList<Character>();
@@ -220,12 +218,12 @@ public class State {
 
           //If we don't have a key or axe, see if its possible to reach with both
           if (!this.haveKey && !this.haveAxe) {
-            if(ff.isReachable(true, true))
-              needKeyAndAxe = true;
+            if(ff.isReachable(true, true)) {
+              needKey = true;
+              needAxe = true;
+            }
           }
         }
-      } else {
-        //No: Explore for gold
       }
 
       //Stage 4: Do we know location of a needed resources?
