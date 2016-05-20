@@ -59,8 +59,7 @@ public class State {
   private int curY;
   private int direction;  //direction we are currently facing
 
-  private int totalNumMoves; //includes NOP moves and C/U moves unlike pastMoves.size()
-  private Stack<Character> pastMoves;
+  private int totalNumMoves; //includes NOP moves and C/U moves
   private Queue<Character> pendingMoves;
 
   private boolean goldVisible;
@@ -80,7 +79,6 @@ public class State {
     needKeyAndAxe = false;
 
     totalNumMoves = 0;
-    pastMoves = new Stack<Character>();
     pendingMoves = new LinkedList<Character>();
     
     //(0,0) is the origin
@@ -194,21 +192,9 @@ public class State {
     if (pendingMoves.isEmpty()) {
 
       //Stage 2: Do we have gold
-      //Yes: add past moved to history (in reverse)
-      //todo: in cases where total moves > 5000, we need to do A* to (0,0) instead
-      if (haveGold && pastMoves.size() > 0) {
-        //Add all past moves to pending moves together
-        while (!pastMoves.isEmpty()) {
-          char move = pastMoves.pop();
-
-          //Inverse L/R moves
-          if (move == MOVE_TURNLEFT)
-            move = MOVE_TURNRIGHT;
-          else if (move == MOVE_TURNRIGHT)
-            move = MOVE_TURNLEFT;
-
-          pendingMoves.add(move);
-        }
+      //Yes: Do A* traversal to starting location, aka (0,0)
+      if (haveGold) {
+        addAStarPathToPendingMoves(new Point2D.Double(curX, curY), new Point2D.Double(0, 0), this.direction, this.haveKey, this.haveAxe);
       }
 
       //Stage 3: Do we see gold?
@@ -243,6 +229,7 @@ public class State {
       }
 
       //Stage 4: Do we know location of a needed resources?
+      //todo: add logic to pick closest (man dist) one rather than breaking
       if (needKey && !keyLocations.isEmpty()) {
         for (int i = 0; i < keyLocations.size(); ++i) {
           Point2D.Double location = keyLocations.get(i);
@@ -253,7 +240,7 @@ public class State {
             continue;
           }
 
-          //Is this location reachable
+          //Is this location reachable?
           FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), location);
           if (ff.isReachable(this.haveKey, this.haveAxe)) {
             //Do A* traversal to location
@@ -273,7 +260,7 @@ public class State {
             continue;
           }
 
-          //Is this location reachable
+          //Is this location reachable?
           FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), location);
           if (ff.isReachable(this.haveKey, this.haveAxe)) {
             //Do A* traversal to location
@@ -364,10 +351,6 @@ public class State {
           default:
             assert (false); //todo remove
         }
-
-        if (!haveGold)
-          pastMoves.push(move); //save non-NOP moves into pastMoves
-
         break;
       case 'R':
         //Moved right
@@ -388,9 +371,6 @@ public class State {
             assert (false); //todo remove
         }
 
-        if (!haveGold)
-          pastMoves.push(move); //save non-NOP moves into pastMoves
-
         break;
       case 'F':
         //Get tile directly in front of us, this is the tile we will be moving onto in this next move
@@ -405,9 +385,6 @@ public class State {
           (nextTile == OBSTACLE_TREE)
           )
           break;
-
-        if (!haveGold)
-          pastMoves.push(move); //save non-NOP moves into pastMoves
 
         if (nextTile == OBSTACLE_WATER) {
           if (num_stones_held > 0) {
@@ -438,13 +415,6 @@ public class State {
         }
         else if (nextTile == TOOL_GOLD) {
           haveGold = true;
-
-          //If using the reverse path strategy, we need to do a 180 degree spin
-          //So we are facing the previous tile before we carry out our pastmoves in reverse
-          pastMoves.push(MOVE_TURNLEFT);
-          pastMoves.push(MOVE_TURNLEFT);
-
-          //todo: at this point we could also potentially optimize pastMoves by removing redundant L/R moves
         }
 
         //We moved forward, update our curX, curY
