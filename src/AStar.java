@@ -18,7 +18,7 @@ public class AStar {
   private Map<Point2D.Double, Integer> gScore;
   private Map<Point2D.Double, Integer> fScore;
 
-  private static final int INFINITY_COST = 99999; //represents infinity
+  private static final int INFINITY_COST = 90; //represents infinity
 
   public AStar(Map<Point2D.Double, Character> map, Point2D.Double start, Point2D.Double goal) {
     this.map = map;
@@ -31,17 +31,10 @@ public class AStar {
     this.fScore = new HashMap<Point2D.Double, Integer>();
   }
 
-  class PQsort implements Comparator<Point2D.Double> {
+  private class PQsort implements Comparator<Point2D.Double> {
     public int compare(Point2D.Double one, Point2D.Double two) {
-      if (fScore.get(two) == null || fScore.get(one) == null) {
-        System.out.println(one.getX());
-        System.out.println(one.getY());
-        System.out.println(two.getX());
-        System.out.println(two.getY());
-        System.out.println("THEY ARE NULL!!");
-      }
-
-      return fScore.get(two)- fScore.get(one);
+      //System.out.println("fscore one: " + fScore.get(one) + ", fscore two:" + fScore.get(two)); //todo: remove
+      return fScore.get(one) - fScore.get(two);
     }
   }
 
@@ -65,11 +58,22 @@ public class AStar {
 
     gScore.put(this.start, 0);
 
-    openSet.add(this.start); //add start to pq
     fScore.put(this.start, ManhattenDistanceHeuristic(start, goal));
+    openSet.add(this.start); //add start to pq
 
     while (!openSet.isEmpty()) {
       Point2D.Double currentTile = openSet.remove();
+
+      /*
+      //todo: remove, used to debug priority queue proper ordering
+      Point2D.Double next = openSet.peek();
+      if (next != null) {
+        if (fScore.get(currentTile) > fScore.get(next)) {
+          System.out.println("ERROR: This should not happen! AStar priority mismatch");
+          System.out.println("Current fscore: " + fScore.get(currentTile) + ", next fscore: " + fScore.get(next));
+        }
+      }
+      */
 
       /*
       //todo: remove, debugging
@@ -125,17 +129,21 @@ public class AStar {
           continue; //this tile is not passable
 
         //Calculate distance from start to a neighbour
-        int tentative_gScore = gScore.get(currentTile) + 1; //distance betweencurrent and neighbour is always 1
+        int tentative_gScore = gScore.get(currentTile) + 1; //distance between current and neighbour is always 1
 
-        if (!openSet.contains(neighbour)) //explore new neighbour
-          openSet.add(neighbour);
-        else if (tentative_gScore >= gScore.get(neighbour))
+        //this is not a better path, ignore it
+        if (tentative_gScore >= gScore.get(neighbour))
           continue; //this is not a better path
 
         //Otherwise, this path is the best so far, record it
         cameFrom.put(neighbour, currentTile);
         gScore.put(neighbour, tentative_gScore);
         fScore.put(neighbour, tentative_gScore + ManhattenDistanceHeuristic(neighbour, goal));
+
+        //Explore this new neighbour
+        //This line must go after the fscore update line above so the priority queue updates correctly
+        if (!openSet.contains(neighbour))
+          openSet.add(neighbour);
       }
     }
 

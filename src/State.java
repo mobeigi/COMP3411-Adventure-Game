@@ -49,9 +49,12 @@ public class State {
   private boolean haveAxe;
   private boolean haveKey;
   private boolean haveGold;
-  
   private int num_stones_held;
-  
+
+  private boolean needKey;
+  private boolean needAxe;
+  private boolean needKeyAndAxe;
+
   private int curX;
   private int curY;
   private int direction;  //direction we are currently facing
@@ -71,6 +74,10 @@ public class State {
     haveKey = false;
     haveGold = false;
     num_stones_held = 0;
+
+    needKey = false;
+    needAxe = false;
+    needKeyAndAxe = false;
 
     totalNumMoves = 0;
     pastMoves = new Stack<Character>();
@@ -186,7 +193,7 @@ public class State {
     //If we have no pending moves, then we must decide what to do
     if (pendingMoves.isEmpty()) {
 
-      //Stage 1: Do we have gold
+      //Stage 2: Do we have gold
       //Yes: add past moved to history (in reverse)
       //todo: in cases where total moves > 5000, we need to do A* to (0,0) instead
       if (haveGold && pastMoves.size() > 0) {
@@ -204,7 +211,7 @@ public class State {
         }
       }
 
-      //Stage 2: Do we see gold?
+      //Stage 3: Do we see gold?
       if (goldVisible) {
         //Yes: Can we reach the gold? (from our current position with current inventory)
         FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), goldLocation);
@@ -212,9 +219,71 @@ public class State {
           //Yes: Do A* traversal to gold
           addAStarPathToPendingMoves(new Point2D.Double(curX, curY), goldLocation, this.direction, this.haveKey, this.haveAxe);
         } else {
+          //Now we do some theoretical reachability tests
+          //If we don't have the key, see if we can reach gold with a key
+          if (!this.haveKey) {
+            if(ff.isReachable(true, this.haveAxe))
+              needKey = true;
+          }
 
+          //If we don't have the axe, see if we can reach gold with a axe
+          if (!this.haveAxe) {
+            if(ff.isReachable(this.haveKey, true))
+              needAxe = true;
+          }
+
+          //If we don't have a key or axe, see if its possible to reach with both
+          if (!this.haveKey && !this.haveAxe) {
+            if(ff.isReachable(true, true))
+              needKeyAndAxe = true;
+          }
+        }
+      } else {
+        //No: Explore for gold
+      }
+
+      //Stage 4: Do we know location of a needed resources?
+      if (needKey && !keyLocations.isEmpty()) {
+        for (int i = 0; i < keyLocations.size(); ++i) {
+          Point2D.Double location = keyLocations.get(i);
+
+          //Sanity check
+          if (this.map.get(location) == null || this.map.get(location) != TOOL_KEY) {
+            assert(false); //todo remove
+            continue;
+          }
+
+          //Is this location reachable
+          FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), location);
+          if (ff.isReachable(this.haveKey, this.haveAxe)) {
+            //Do A* traversal to location
+            addAStarPathToPendingMoves(new Point2D.Double(curX, curY), location, this.direction, this.haveKey, this.haveAxe);
+            break; //any one will do
+          }
         }
       }
+
+      if (needAxe && !axeLocations.isEmpty()) {
+        for (int i = 0; i < axeLocations.size(); ++i) {
+          Point2D.Double location = axeLocations.get(i);
+
+          //Sanity check
+          if (this.map.get(location) == null || this.map.get(location) != TOOL_AXE) {
+            assert(false); //todo remove
+            continue;
+          }
+
+          //Is this location reachable
+          FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), location);
+          if (ff.isReachable(this.haveKey, this.haveAxe)) {
+            //Do A* traversal to location
+            addAStarPathToPendingMoves(new Point2D.Double(curX, curY), location, this.direction, this.haveKey, this.haveAxe);
+            break; //any one will do
+          }
+        }
+      }
+
+
     }
 
     //If we reach this stage, we already had pending moves
@@ -359,10 +428,14 @@ public class State {
         //Collect tools
         if (nextTile == TOOL_STEPPING_STONE)
           ++num_stones_held;
-        else if (nextTile == TOOL_AXE)
+        else if (nextTile == TOOL_AXE) {
           haveAxe = true;
-        else if (nextTile == TOOL_KEY)
+          needAxe = false;  //no longer need axes for rest of game
+        }
+        else if (nextTile == TOOL_KEY) {
           haveKey = true;
+          needKey = false; //no longer need keys for rest of game
+        }
         else if (nextTile == TOOL_GOLD) {
           haveGold = true;
 

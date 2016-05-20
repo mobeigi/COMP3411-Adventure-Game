@@ -21,7 +21,6 @@ public class FloodFill {
     this.map = map;
     this.start = start;
     this.goal = goal;
-    this.isConnected = new HashSet<Point2D.Double>();
   }
 
   //Standard flood fill
@@ -31,6 +30,8 @@ public class FloodFill {
 
   public boolean isReachable(boolean hasKey, boolean hasAxe) {
     LinkedList<Point2D.Double> q = new LinkedList<Point2D.Double>();
+    this.isConnected = new HashSet<Point2D.Double>();
+
     q.add(start);
 
     while (!q.isEmpty()) {
