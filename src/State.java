@@ -201,15 +201,15 @@ public class State {
     */
 
     /*
-    FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), new Point2D.Double(0, 3));
+    FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), new Point2D.Double(0, 2));
     if (ff.isReachable(this.haveKey, this.haveAxe))
       System.out.println("REACHABLE!!!");
     else
       System.out.println("NOT REACHABLE!!!");
     */
 
-    AStar a = new AStar(this.map, new Point2D.Double(curX, curY), new Point2D.Double(0, 2));
-    a.search();
+    //AStar a = new AStar(this.map, new Point2D.Double(curX, curY), new Point2D.Double(0, 2));
+    //a.search();
 
 
 
@@ -437,6 +437,20 @@ public class State {
 
     //Get element at (nextX, nextY)
     return this.map.get(new Point2D.Double(nextX, nextY));
+  }
+
+  //Returns true if tile is passable based on items we have
+  public static boolean isTilePassable(char tile, boolean hasKey, boolean hasAxe) {
+    //If tile does not meet one of the conditions below, it is NOT passable
+    return (  (tile == State.OBSTACLE_SPACE) ||
+              (tile == State.TOOL_STEPPING_STONE_PLACED) ||
+              (tile == State.TOOL_AXE) ||
+              (tile == State.TOOL_KEY) ||
+              (tile == State.TOOL_GOLD) ||
+              (tile == State.TOOL_STEPPING_STONE) ||
+              ((tile == State.OBSTACLE_DOOR) && hasKey) ||
+              ((tile == State.OBSTACLE_TREE) && hasAxe)
+            );
   }
 
 }

@@ -46,17 +46,8 @@ public class FloodFill {
       //If not processed
       if (!isConnected.contains(first)) {
         //Apply filters
-        //Essentially, the list below details acceptable tiles that are passable
         //Doors/Trees are judged passable based on passed parameters
-        if (!((tile == State.OBSTACLE_SPACE) ||
-          (tile == State.TOOL_STEPPING_STONE_PLACED) ||
-          (tile == State.TOOL_AXE) ||
-          (tile == State.TOOL_KEY) ||
-          (tile == State.TOOL_GOLD) ||
-          (tile == State.TOOL_STEPPING_STONE) ||
-          ((tile == State.OBSTACLE_DOOR) && hasKey) ||
-          ((tile == State.OBSTACLE_TREE) && hasAxe)
-          ))
+        if (!State.isTilePassable(tile, hasKey, hasAxe))
           continue; //this tile is not passable
 
         //Mark first as processed

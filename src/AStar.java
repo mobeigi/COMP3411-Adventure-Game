@@ -18,7 +18,7 @@ public class AStar {
   private Map<Point2D.Double, Integer> gScore;
   private Map<Point2D.Double, Integer> fScore;
 
-  private static final int INFINITY_COST = 99999;
+  private static final int INFINITY_COST = 99999; //represents infinity
 
   public AStar(Map<Point2D.Double, Character> map, Point2D.Double start, Point2D.Double goal) {
     this.map = map;
@@ -45,7 +45,12 @@ public class AStar {
     }
   }
 
+  //Standard AStar
   public void search() {
+    search(false, false);
+  }
+
+  public void search(boolean hasKey, boolean hasAxe) {
     PQsort pqs = new PQsort();
     PriorityQueue<Point2D.Double> openSet = new PriorityQueue<Point2D.Double>(10, pqs); //todo: fine tune initial size
 
@@ -114,15 +119,7 @@ public class AStar {
         //Check if neighbour tile is passable
         char tile = this.map.get(neighbour);
 
-        if (!((tile == State.OBSTACLE_SPACE) ||
-          (tile == State.TOOL_STEPPING_STONE_PLACED) ||
-          (tile == State.TOOL_AXE) ||
-          (tile == State.TOOL_KEY) ||
-          (tile == State.TOOL_GOLD) ||
-          (tile == State.TOOL_STEPPING_STONE) ||
-          (tile == State.OBSTACLE_DOOR) ||
-          (tile == State.OBSTACLE_TREE)
-        ))
+        if (!State.isTilePassable(tile, hasKey, hasAxe))
           continue; //this tile is not passable
 
         //Calculate distance from start to a neighbour
