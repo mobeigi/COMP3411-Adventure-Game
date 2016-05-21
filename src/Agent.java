@@ -15,13 +15,15 @@ public class Agent {
   private State state;
 
   public Agent() {
-    //Initlise agent
+    //Initialise our agent state
     state = new State();
   }
 
   public char get_action( char view[][] ) {
-    // REPLACE THIS CODE WITH AI TO CHOOSE ACTION
+    // Update the state with new information provided by the view
     state.updateFromView(view);
+
+    //Then make a move
     return state.makeMove();
    }
 

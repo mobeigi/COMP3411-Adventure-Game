@@ -58,7 +58,7 @@ public class AStar {
 
     gScore.put(this.start, 0);
 
-    fScore.put(this.start, ManhattenDistanceHeuristic(start, goal));
+    fScore.put(this.start, ManhattanDistanceHeuristic(start, goal));
     openSet.add(this.start); //add start to pq
 
     while (!openSet.isEmpty()) {
@@ -75,16 +75,8 @@ public class AStar {
       }
       */
 
-      /*
-      //todo: remove, debugging
-      Boolean b = (currentTile == this.goal);
-      String str3 = b.toString();
-      System.out.println("Current Tile: ("+ currentTile.getX() + "," + currentTile.getY() +"), matchesGoal:" + str3 );
-      */
-
       //Check if current tile is the goal tile
-      //todo: (currentTile == this.goal) comparison does not work! why?
-      if (currentTile.getX() == goal.getX() && currentTile.getY() == goal.getY()) {
+      if (currentTile.equals(this.goal)) {
         //Return here, at this stage, getPath() can be called to reconstruct the path
         return;
       }
@@ -138,7 +130,7 @@ public class AStar {
         //Otherwise, this path is the best so far, record it
         cameFrom.put(neighbour, currentTile);
         gScore.put(neighbour, tentative_gScore);
-        fScore.put(neighbour, tentative_gScore + ManhattenDistanceHeuristic(neighbour, goal));
+        fScore.put(neighbour, tentative_gScore + ManhattanDistanceHeuristic(neighbour, goal));
 
         //Explore this new neighbour
         //This line must go after the fscore update line above so the priority queue updates correctly
@@ -150,7 +142,7 @@ public class AStar {
     //At this point, failed to find path
   }
 
-  private int ManhattenDistanceHeuristic(Point2D.Double start, Point2D.Double goal) {
+  private int ManhattanDistanceHeuristic(Point2D.Double start, Point2D.Double goal) {
     return Math.abs((int)start.getX() - (int)goal.getX()) + Math.abs((int)start.getY() - (int)goal.getY());
   }
 

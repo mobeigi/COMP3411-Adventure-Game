@@ -75,7 +75,7 @@ public class SpiralSeek {
 
             if (State.isTilePassable(newTileType, hasKey, hasAxe)) {
               //Get priority
-              if (getPointPriority(newTile) >= 1) {
+              if (isRevealingPoint(newTile)) {
                 //Guaranteed to reveal unknown tiles
                 //Ensure this tile is reachable
                 FloodFill ff = new FloodFill(this.map, start, newTile);
@@ -89,6 +89,7 @@ public class SpiralSeek {
         }
       }
 
+      //Update dx,dy if end of spirals straight line path
       if ((x == y) || ((x < 0) && (x == -y)) || ((x > 0) && (x == 1 - y))) {
         int tmp = dx;
         dx = -dy;
@@ -99,16 +100,14 @@ public class SpiralSeek {
       y += dy;
    }
 
-    System.out.println("Failed spiral!");
     return start;
   }
 
-  //This acts as a evaluation function (cost analysis)
-  //Essentially, for every point we inspect the surrounding 24 points around it (view/sight range)
-  //We add priority if surrounding points are unknowns (as we would like to inspect them)
-  private int getPointPriority(Point2D.Double point) {
-    int priority = 0; //initially zero
-
+  //This acts as a evaluation method which tells us if a point is capable of revealing
+  //More information about the environment (revealing unknowns) if we traverse to it
+  //Essentially, we inspect the surrounding 24 points around it (view/sight range)
+  //and return true if any one of those blocks is an unknown, otherwise we return false
+  private boolean isRevealingPoint(Point2D.Double point) {
     //For every surrounding block
     for (int i = 0; i < offsets.size(); ++i) {
       Point2D.Double offset = (Point2D.Double)offsets.get(i);
@@ -117,12 +116,13 @@ public class SpiralSeek {
       if (this.map.get(surroundingPoint) != null) {
         char surroundingPointType = this.map.get(surroundingPoint);
 
-        //todo: we can probably just break here, return a bool?
+        //if this condition is true, the original point is revealing, return true
         if (surroundingPointType == State.OBSTACLE_UNKNOWN)
-          ++priority;
+          return true;
       }
     }
 
-    return priority;
+    //Point is not revealing
+    return false;
   }
 }

@@ -38,12 +38,6 @@ public class FloodFill {
       Point2D.Double first = q.removeFirst();
       char tile = this.map.get(first);
 
-      //We should convert the direction player tile to a space so the program is not confused
-      if (tile == State.DIRECTION_DOWN || tile == State.DIRECTION_LEFT
-        || tile == State.DIRECTION_RIGHT || tile == State.DIRECTION_UP) {
-        tile = State.OBSTACLE_SPACE;
-      }
-
       //If not processed
       if (!isConnected.contains(first)) {
         //Apply filters

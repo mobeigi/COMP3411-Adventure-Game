@@ -1,6 +1,5 @@
 import java.util.*;
 import java.io.*;
-import java.net.*;
 import java.awt.geom.Point2D;
 
 public class State {
@@ -62,10 +61,10 @@ public class State {
   private Queue<Character> pendingMoves;
 
   private boolean goldVisible;
-  Point2D.Double goldLocation; //coordinate of gold once it has been found
-  LinkedList<Point2D.Double> axeLocations;
-  LinkedList<Point2D.Double> keyLocations;
-  
+  private Point2D.Double goldLocation; //coordinate of gold once it has been found
+  private LinkedList<Point2D.Double> axeLocations;
+  private LinkedList<Point2D.Double> keyLocations;
+
   public State() {
     //Init variables
     haveAxe = false;
@@ -187,41 +186,41 @@ public class State {
 
     //Stage 1
     //If we have no pending moves, then we must decide what to do
-    boolean moveMade = false; //true when move made for this turn
-    if (pendingMoves.isEmpty()) {
+    while (pendingMoves.isEmpty()) {
 
       //Stage 2: Do we have gold
       //Yes: Do A* traversal to starting location, aka (0,0)
       if (haveGold) {
         addAStarPathToPendingMoves(new Point2D.Double(curX, curY), new Point2D.Double(0, 0), this.direction, this.haveKey, this.haveAxe);
-        moveMade = true;
+        //moveMade = true;
+        break;
       }
 
       //Stage 3: Do we see gold?
-      if (goldVisible && !moveMade) {
+      if (goldVisible) {
         //Yes: Can we reach the gold? (from our current position with current inventory)
         FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), goldLocation);
         if (ff.isReachable(this.haveKey, this.haveAxe)) {
           //Yes: Do A* traversal to gold
           addAStarPathToPendingMoves(new Point2D.Double(curX, curY), goldLocation, this.direction, this.haveKey, this.haveAxe);
-          moveMade = true;
+          break;
         } else {
           //Now we do some theoretical reachability tests
           //If we don't have the key, see if we can reach gold with a key
           if (!this.haveKey) {
-            if(ff.isReachable(true, this.haveAxe))
+            if (ff.isReachable(true, this.haveAxe))
               needKey = true;
           }
 
           //If we don't have the axe, see if we can reach gold with a axe
           if (!this.haveAxe) {
-            if(ff.isReachable(this.haveKey, true))
+            if (ff.isReachable(this.haveKey, true))
               needAxe = true;
           }
 
           //If we don't have a key or axe, see if its possible to reach with both
           if (!this.haveKey && !this.haveAxe) {
-            if(ff.isReachable(true, true)) {
+            if (ff.isReachable(true, true)) {
               needKey = true;
               needAxe = true;
             }
@@ -232,14 +231,15 @@ public class State {
       //Stage 4: Do we know location of a needed resources?
       //Note that if we fail to find a key (ie no moveMade = true), we can still try to find an axe
       //todo: add logic to pick closest (man dist) one rather than breaking
-      if (needKey && !keyLocations.isEmpty() && !moveMade) {
+      if (needKey && !keyLocations.isEmpty()) {
         //Yes: Check if reachable with current inventory and traverse to it if so
+        boolean isKeyAttainable = false;
         for (int i = 0; i < keyLocations.size(); ++i) {
           Point2D.Double location = keyLocations.get(i);
 
           //Sanity check
           if (this.map.get(location) == null || this.map.get(location) != TOOL_KEY) {
-            assert(false); //todo remove
+            assert (false); //todo remove
             continue;
           }
 
@@ -248,20 +248,26 @@ public class State {
           if (ff.isReachable(this.haveKey, this.haveAxe)) {
             //Do A* traversal to location
             addAStarPathToPendingMoves(new Point2D.Double(curX, curY), location, this.direction, this.haveKey, this.haveAxe);
-            moveMade = true;
-            break; //any one will do
+            isKeyAttainable = true;
+            break; //any key will do, we only need one
           }
         }
+
+        //Leave loop so we can get the key
+        if (isKeyAttainable)
+          break;
       }
 
-      if (needAxe && !axeLocations.isEmpty() && !moveMade) {
+      if (needAxe && !axeLocations.isEmpty()) {
         //Yes: Check if reachable with current inventory and traverse to it if so
+        boolean isAxeAttainable = false;
+
         for (int i = 0; i < axeLocations.size(); ++i) {
           Point2D.Double location = axeLocations.get(i);
 
           //Sanity check
           if (this.map.get(location) == null || this.map.get(location) != TOOL_AXE) {
-            assert(false); //todo remove
+            assert (false); //todo remove
             continue;
           }
 
@@ -270,32 +276,56 @@ public class State {
           if (ff.isReachable(this.haveKey, this.haveAxe)) {
             //Do A* traversal to location
             addAStarPathToPendingMoves(new Point2D.Double(curX, curY), location, this.direction, this.haveKey, this.haveAxe);
-            moveMade = true;
-            break; //any one will do
+            isAxeAttainable = true;
+            break; //any axe will do, we only need one
           }
         }
+
+        //Leave loop so we can get the axe
+        if (isAxeAttainable)
+          break;
       }
 
-      //State 5: Explore to reveal unknown blocks
+      //Stage 5: Explore to reveal unknown blocks
       SpiralSeek s = new SpiralSeek(this.map, new Point2D.Double(curX, curY));
       Point2D.Double explorationDestination = s.getTile(this.haveKey, this.haveAxe);
-
-      //If the spiralseek successfully found a destination, it is guaranteed to be passable/reachable
-      if (explorationDestination != new Point2D.Double(curX, curY)) {
+      //If the spiral seek algorithm successfully found a destination, it is guaranteed to be passable/reachable
+      if (!explorationDestination.equals(new Point2D.Double(curX, curY))) {
         //Do A* traversal to exploration destination
         addAStarPathToPendingMoves(new Point2D.Double(curX, curY), explorationDestination, this.direction, this.haveKey, this.haveAxe);
-        moveMade = true;
+        break; //todo was continue
       }
+
+      //Stage 6: Cannot explore any further, is there an axe or tool we can pick up to perhaps help us explore more
+      boolean canGetResource = false;
+
+      if (!needKey && !haveKey && !keyLocations.isEmpty()) {
+        needKey = true;
+        canGetResource = true;
+      }
+
+      if (!needAxe &&  !haveAxe && !axeLocations.isEmpty()) {
+        needAxe = true;
+        canGetResource = true;
+      }
+
+      //If we can get a resource, go to next iteration so stage 4 can get us the key
+      if (canGetResource)
+        continue;
+
+      //Stage 7
+      System.out.println("DISASTER!!!");
 
     }
 
-    //If we reach this stage, we already had pending moves
+    //Stage 1: If we reach this stage, we already had pending moves
     //Or decisions have been made above which added pending moves for us
-    //Lets complete pending moves
+    //Lets complete the pending moves
+    //The conditional guard of the previous while loop ensures there are pending moves if we reach here
     if (!pendingMoves.isEmpty()) {  //this check is required as pendingMoves may change after the first check
       //Todo: remove before submission, slow down moves for us
       //try {
-      //  Thread.sleep(10);
+      //  Thread.sleep(100);
       //} catch(InterruptedException ex) {
       //  Thread.currentThread().interrupt();
       //}
@@ -305,9 +335,9 @@ public class State {
       updateFromMove(moveToMake);
       return moveToMake;
     }
-    else {
-      //todo: handle, this should never ever happen...for now it might though
-    }
+
+
+
 
     //todo: remove below manual movement
     int ch = 0;
@@ -472,8 +502,8 @@ public class State {
     System.out.print("\n");
 
     //Traverse map showing grid from top left to bottom right
-    for (int y = 30; y >= -30; --y) {
-      for (int x = -30; x <= 30; ++x) {
+    for (int y = 12; y >= -12; --y) {
+      for (int x = -12; x <= 12; ++x) {
         char curTile = map.get(new Point2D.Double(x, y));
         System.out.print(curTile);
       }
@@ -536,7 +566,11 @@ public class State {
               (tile == State.TOOL_GOLD) ||
               (tile == State.TOOL_STEPPING_STONE) ||
               ((tile == State.OBSTACLE_DOOR) && hasKey) ||
-              ((tile == State.OBSTACLE_TREE) && hasAxe)
+              ((tile == State.OBSTACLE_TREE) && hasAxe) ||
+              (tile == State.DIRECTION_UP) ||
+              (tile == State.DIRECTION_DOWN) ||
+              (tile == State.DIRECTION_LEFT) ||
+              (tile == State.DIRECTION_RIGHT)
             );
   }
 
