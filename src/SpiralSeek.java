@@ -11,7 +11,7 @@ import java.awt.geom.Point2D;
  * @author Mohammad Ghasembeigi
  * @version 1.4
  * @see <a href="https://stackoverflow.com/questions/398299/looping-in-a-spiral/">Stack Overflow Spiral Algorithm
- * question (answered by Can Berk Güder)</a>
+ * question (answered by Can Berk Guder)</a>
  * @see <a href="https://stackoverflow.com/questions/398299/looping-in-a-spiral/10607084#10607084">Java version of
  * Spiral algorithm (by JHolta)</a>
  */
