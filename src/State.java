@@ -354,65 +354,101 @@ public class State {
         break; //todo was continue
       }
 
-      //Stage 6: Cannot explore any further, is there an axe or tool we can pick up to perhaps help us explore more
+      //Stage 6: Cannot explore any further, is there a reachable axe or tool we can pick up to perhaps help us explore more
       boolean canGetResource = false;
 
       if (!needKey && !haveKey && !keyLocations.isEmpty()) {
-        needKey = true;
-        canGetResource = true;
+        //Ensure at least one is reachable
+        for (Point2D.Double location : keyLocations) {
+          FloodFill ff = new FloodFill(map, new Point2D.Double(curX, curY), location);
+          if (ff.isReachable(haveKey, haveAxe)) {
+            needKey = true;
+            canGetResource = true;
+            break;
+          }
+        }
       }
 
-      if (!needAxe &&  !haveAxe && !axeLocations.isEmpty()) {
-        needAxe = true;
-        canGetResource = true;
+      if (!needAxe && !haveAxe && !axeLocations.isEmpty()) {
+        //Ensure at least one is reachable
+        for (Point2D.Double location : axeLocations) {
+          FloodFill ff = new FloodFill(map, new Point2D.Double(curX, curY), location);
+          if (ff.isReachable(haveKey, haveAxe)) {
+            needAxe = true;
+            canGetResource = true;
+            break;
+          }
+        }
       }
 
       if (!ssLocations.isEmpty()) {
-        needSS = true;
-        canGetResource = true;
+        //Ensure at least one is reachable
+        for (Point2D.Double location : ssLocations) {
+          FloodFill ff = new FloodFill(map, new Point2D.Double(curX, curY), location);
+          if (ff.isReachable(haveKey, haveAxe)) {
+            needSS = true;
+            canGetResource = true;
+            break;
+          }
+        }
       }
 
       //If we can get a resource, go to next iteration so stage 4 can get us the resource
       if (canGetResource)
         continue;
 
-      //Stage 7: Need to use our stepping stones
-      boolean moveMade = false;
+      //Stage 7: Need to use our stepping stones to get to a new unreachable area
+      //Note at this stage we have all resources that are reachable to us
+      //So any tools we still see on the map are guaranteed to be unreachable (without using stepping stones)
 
-      for (int i = 1; i <= num_stones_held && !moveMade; ++i) {
-        List<Point2D.Double[]> combinationList = new ArrayList<Point2D.Double[]>();
-        Point2D.Double[] arr = (Point2D.Double[])waterLocations.toArray(new Point2D.Double[waterLocations.size()]);
-        combinations(i, arr, combinationList); //get combinations
+      //Try to get to the area near gold
+      if (useSteppingStoneTowardsGoal(goldLocation))
+        break;
 
-        for (Point2D.Double[] group : combinationList) {
-
-          //Filter non adjacent point groups
-          //The only way to reach the objective is to use stepping stones on adjacent water tiles
-          //This filter also has performance benefits as we do cheap connectivity tests with no map compared to
-          //more costly flood fill searches on the actual map
-          if (!isPointGroupAdjacent(group))
-            continue;
-
-          //Replace every waterTile with a stepping stone placed tile for now
-          for (Point2D.Double waterTile : group) {
-            map.put(waterTile, TOOL_STEPPING_STONE_PLACED);
-          }
-
-          //Perform a reachability test to the gold
-          FloodFill ff = new FloodFill(map, new Point2D.Double(curX, curY), goldLocation);
-          if (ff.isReachable(haveKey, haveAxe)) {
-            //Do A* traversal to location
-            addAStarPathToPendingMoves(new Point2D.Double(curX, curY), goldLocation, direction, haveKey, haveAxe);
-            moveMade = true;
+      //Try to get to the area near another stepping stone
+      if (!ssLocations.isEmpty()) {
+        boolean canGetToNewArea = false;
+        for (Point2D.Double location : ssLocations) {
+          if (useSteppingStoneTowardsGoal(location)) {
+            canGetToNewArea = true;
             break;
           }
+        }
 
-          //Restore stepping stones with original water
-          for (Point2D.Double waterTile : group) {
-            map.put(waterTile, OBSTACLE_WATER);
+        if (canGetToNewArea)
+          break;
+      }
+
+      //Try to get to the area near another key
+      if (!keyLocations.isEmpty()) {
+        boolean canGetToNewArea = false;
+        for (Point2D.Double location : keyLocations) {
+          if (useSteppingStoneTowardsGoal(location)) {
+            canGetToNewArea = true;
+            break;
           }
         }
+
+        if (canGetToNewArea)
+          break;
       }
+
+      //Try to get to the area near another axe
+      if (!axeLocations.isEmpty()) {
+        boolean canGetToNewArea = false;
+        for (Point2D.Double location : axeLocations) {
+          if (useSteppingStoneTowardsGoal(location)) {
+            canGetToNewArea = true;
+            break;
+          }
+        }
+
+        if (canGetToNewArea)
+          break;
+      }
+
+
+
     }
 
     //Stage 1: If we reach this stage, we already had pending moves
@@ -986,6 +1022,62 @@ public class State {
 
     //Here all points would have been connected so every tile is connected
     return true;
+  }
+
+  /**
+   * Given an unreachable destination goal, creates all possible combinations of waters of increasing depth
+   * starting from n = 1, n = 2...etc until n = num_stones_held. Then all combinations where water tiles are not
+   * adjacent (touching) are eliminated as they will never allow you to reach a new previously unreachable area
+   * (ie they are impossible solutions).
+   *
+   * Finally, a reachability test is completed for each group to ensure new area is reachable if stepping stones
+   * are placed over water in the group. If new area is reachable, an A* traversal is completed using
+   * addAStarPathToPendingMoves.
+   *
+   * @param goal unreachable destination goal
+   * @return true if goal is reachable if stepping stones are used on various water tiles
+   *              (moves also added via addAStarPathToPendingMoves as sideeffect), false otherwise
+   * @see State#addAStarPathToPendingMoves(Point2D.Double, Point2D.Double, int, boolean, boolean)
+   */
+  private boolean useSteppingStoneTowardsGoal(Point2D.Double goal) {
+    boolean moveMade = false;
+
+    for (int i = 1; i <= num_stones_held && !moveMade; ++i) {
+      List<Point2D.Double[]> combinationList = new ArrayList<Point2D.Double[]>();
+      Point2D.Double[] arr = (Point2D.Double[]) waterLocations.toArray(new Point2D.Double[waterLocations.size()]);
+      combinations(i, arr, combinationList); //get combinations
+
+      for (Point2D.Double[] group : combinationList) {
+
+        //Filter non adjacent point groups
+        //The only way to reach the objective is to use stepping stones on adjacent water tiles
+        //This filter results in severe performance gains as we do cheap connectivity tests with no map compared to
+        //more costly flood fill searches on the actual map
+        if (!isPointGroupAdjacent(group))
+          continue;
+
+        //Replace every waterTile with a stepping stone placed tile for now
+        for (Point2D.Double waterTile : group) {
+          map.put(waterTile, TOOL_STEPPING_STONE_PLACED);
+        }
+
+        //Perform a reachability test to the goal
+        FloodFill ff = new FloodFill(map, new Point2D.Double(curX, curY), goal);
+        if (ff.isReachable(haveKey, haveAxe)) {
+          //Do A* traversal to location
+          addAStarPathToPendingMoves(new Point2D.Double(curX, curY), goal, direction, haveKey, haveAxe);
+          moveMade = true;
+          break;
+        }
+
+        //Restore stepping stones with original water
+        for (Point2D.Double waterTile : group) {
+          map.put(waterTile, OBSTACLE_WATER);
+        }
+      }
+    }
+
+    return moveMade;
   }
 
 }
