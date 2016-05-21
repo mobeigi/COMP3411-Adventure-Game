@@ -458,7 +458,7 @@ public class State {
         break;
       case 'F':
         //Get tile directly in front of us, this is the tile we will be moving onto in this next move
-        nextTile = getTileInFront(new Point2D.Double(curX, curY));
+        nextTile = map.get(getTileInFront(new Point2D.Double(curX, curY)));
 
         //Moving forwards against a wall, door or tree is a NOP
         //We have to use C and U to remove doors/trees and walls cant be moved into at all
@@ -583,7 +583,7 @@ public class State {
    * @param tile the tile we wish to look in front of
    * @return  the tile in front of tile
    */
-  private char getTileInFront(Point2D.Double tile) {
+  private Point2D.Double getTileInFront(Point2D.Double tile) {
     return getTileInFront(tile, this.direction);
   }
 
@@ -593,9 +593,9 @@ public class State {
    *
    * @param tile  the tile we wish to look in front of
    * @param curDirection  the direction we are facing (UP, RIGHT, DOWN, LEFT)
-   * @return  the tile in front of tile
+   * @return  the tile point in front of tile
    */
-  private char getTileInFront(Point2D.Double tile, int curDirection) {
+  private Point2D.Double getTileInFront(Point2D.Double tile, int curDirection) {
     int nextX = (int)tile.getX();
     int nextY = (int)tile.getY();
 
@@ -617,7 +617,7 @@ public class State {
     }
 
     //Get element at (nextX, nextY)
-    return this.map.get(new Point2D.Double(nextX, nextY));
+    return new Point2D.Double(nextX, nextY);
   }
 
   //Returns true if tile is passable based on items we have
@@ -790,7 +790,7 @@ public class State {
       curDirection = directionHeaded;
 
       //Check if we need to cut down a tree or unlock a door
-      char nextTile = getTileInFront(element, curDirection);
+      char nextTile = map.get(getTileInFront(element, curDirection));
       if (nextTile == OBSTACLE_TREE) {
         this.pendingMoves.add(MOVE_CHOPTREE);
       } else if (nextTile == OBSTACLE_DOOR) {
