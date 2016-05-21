@@ -82,10 +82,10 @@ public class AStar {
       }
     }
 
-    gScore.put(this.start, 0);
+    gScore.put(start, 0);
 
-    fScore.put(this.start, ManhattanDistanceHeuristic(start, goal));
-    openSet.add(this.start); //add start to pq
+    fScore.put(start, ManhattanDistanceHeuristic(start, goal));
+    openSet.add(start); //add start to pq
 
     while (!openSet.isEmpty()) {
       Point2D.Double currentTile = openSet.remove();
@@ -102,7 +102,7 @@ public class AStar {
       */
 
       //Check if current tile is the goal tile
-      if (currentTile.equals(this.goal)) {
+      if (currentTile.equals(goal)) {
         //Return here, at this stage, getPath() can be called to reconstruct the path
         searchCompleted = true;
         return;
@@ -142,7 +142,7 @@ public class AStar {
           continue;
 
         //Check if neighbour tile is passable
-        char tile = this.map.get(neighbour);
+        char tile = map.get(neighbour);
 
         if (!State.isTilePassable(tile, hasKey, hasAxe))
           continue; //this tile is not passable
@@ -195,11 +195,11 @@ public class AStar {
       throw new IllegalStateException("search() has not been called yet");
 
     LinkedList<Point2D.Double> sequence = new LinkedList<>();
-    Point2D.Double u = this.goal;
+    Point2D.Double u = goal;
 
-    while (this.cameFrom.get(u) != null) {
+    while (cameFrom.get(u) != null) {
       sequence.add(u);
-      u = this.cameFrom.get(u);
+      u = cameFrom.get(u);
     }
 
     return sequence;

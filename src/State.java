@@ -78,38 +78,38 @@ public class State {
    */
   public State() {
     //Init variables
-    haveAxe = false;
-    haveKey = false;
-    haveGold = false;
-    num_stones_held = 0;
+    this.haveAxe = false;
+    this.haveKey = false;
+    this.haveGold = false;
+    this.num_stones_held = 0;
 
-    needKey = false;
-    needAxe = false;
+    this.needKey = false;
+    this.needAxe = false;
 
-    totalNumMoves = 0;
-    pendingMoves = new LinkedList<>();
+    this.totalNumMoves = 0;
+    this.pendingMoves = new LinkedList<>();
     
     //(0,0) is the origin
-    curX = curY = 0;
+    this.curX = this.curY = 0;
     
     //Prefill map with unknowns for reasonable bounds
-    map = new HashMap<>();
+    this.map = new HashMap<>();
 
     //You may assume that the specified environment is no larger than 80 by 80
     //However, as our starting origin is (0,0), our total boundary should be at least 80*2 by 80*2 or 160x160
     for (int x = -80; x < 81; ++x) {
       for (int y = -80; y < 81; ++y) {
-        map.put(new Point2D.Double(x, y), OBSTACLE_UNKNOWN);
+        this.map.put(new Point2D.Double(x, y), OBSTACLE_UNKNOWN);
       }
     }
     
     //Initially, we always consider ourselves to be facing up
-    direction = UP;
-    map.put(new Point2D.Double(0, 0), DIRECTION_UP);
+    this.direction = UP;
+    this.map.put(new Point2D.Double(0, 0), DIRECTION_UP);
 
-    goldVisible = false;
-    axeLocations = new LinkedList<>();
-    keyLocations = new LinkedList<>();
+    this.goldVisible = false;
+    this.axeLocations = new LinkedList<>();
+    this.keyLocations = new LinkedList<>();
   }
 
 
@@ -197,7 +197,7 @@ public class State {
     }
     
     //todo: remove this
-    //this.printMap();
+    //printMap();
   }
 
   /**
@@ -217,35 +217,34 @@ public class State {
       //Yes: Do A* traversal to starting location, aka (0,0)
       if (haveGold) {
         addAStarPathToPendingMoves(new Point2D.Double(curX, curY),
-          new Point2D.Double(0, 0), this.direction, this.haveKey, this.haveAxe);
+          new Point2D.Double(0, 0), direction, haveKey, haveAxe);
         break;
       }
 
       //Stage 3: Do we see gold?
       if (goldVisible) {
         //Yes: Can we reach the gold? (from our current position with current inventory)
-        FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), goldLocation);
-        if (ff.isReachable(this.haveKey, this.haveAxe)) {
+        FloodFill ff = new FloodFill(map, new Point2D.Double(curX, curY), goldLocation);
+        if (ff.isReachable(haveKey, haveAxe)) {
           //Yes: Do A* traversal to gold
-          addAStarPathToPendingMoves(new Point2D.Double(curX, curY), goldLocation,
-            this.direction, this.haveKey, this.haveAxe);
+          addAStarPathToPendingMoves(new Point2D.Double(curX, curY), goldLocation, direction, haveKey, haveAxe);
           break;
         } else {
           //Now we do some theoretical reachability tests
           //If we don't have the key, see if we can reach gold with a key
-          if (!this.haveKey) {
-            if (ff.isReachable(true, this.haveAxe))
+          if (!haveKey) {
+            if (ff.isReachable(true, haveAxe))
               needKey = true;
           }
 
           //If we don't have the axe, see if we can reach gold with a axe
-          if (!this.haveAxe) {
-            if (ff.isReachable(this.haveKey, true))
+          if (!haveAxe) {
+            if (ff.isReachable(haveKey, true))
               needAxe = true;
           }
 
           //If we don't have a key or axe, see if its possible to reach with both
-          if (!this.haveKey && !this.haveAxe) {
+          if (!haveKey && !haveAxe) {
             if (ff.isReachable(true, true)) {
               needKey = true;
               needAxe = true;
@@ -262,17 +261,16 @@ public class State {
 
         for (Point2D.Double location : keyLocations) {
           //Sanity check
-          if (this.map.get(location) == null || this.map.get(location) != TOOL_KEY) {
+          if (map.get(location) == null || map.get(location) != TOOL_KEY) {
             assert (false); //todo remove
             continue;
           }
 
           //Is this location reachable?
-          FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), location);
-          if (ff.isReachable(this.haveKey, this.haveAxe)) {
+          FloodFill ff = new FloodFill(map, new Point2D.Double(curX, curY), location);
+          if (ff.isReachable(haveKey, haveAxe)) {
             //Do A* traversal to location
-            addAStarPathToPendingMoves(new Point2D.Double(curX, curY), location,
-              this.direction, this.haveKey, this.haveAxe);
+            addAStarPathToPendingMoves(new Point2D.Double(curX, curY), location, direction, haveKey, haveAxe);
             isKeyAttainable = true;
             break; //any key will do, we only need one
           }
@@ -289,17 +287,16 @@ public class State {
 
         for (Point2D.Double location : axeLocations) {
           //Sanity check
-          if (this.map.get(location) == null || this.map.get(location) != TOOL_AXE) {
+          if (map.get(location) == null || map.get(location) != TOOL_AXE) {
             assert (false); //todo remove
             continue;
           }
 
           //Is this location reachable?
-          FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), location);
-          if (ff.isReachable(this.haveKey, this.haveAxe)) {
+          FloodFill ff = new FloodFill(map, new Point2D.Double(curX, curY), location);
+          if (ff.isReachable(haveKey, haveAxe)) {
             //Do A* traversal to location
-            addAStarPathToPendingMoves(new Point2D.Double(curX, curY), location,
-              this.direction, this.haveKey, this.haveAxe);
+            addAStarPathToPendingMoves(new Point2D.Double(curX, curY), location, direction, haveKey, haveAxe);
             isAxeAttainable = true;
             break; //any axe will do, we only need one
           }
@@ -311,13 +308,12 @@ public class State {
       }
 
       //Stage 5: Explore to reveal unknown blocks
-      SpiralSeek s = new SpiralSeek(this.map, new Point2D.Double(curX, curY));
-      Point2D.Double explorationDestination = s.getTile(this.haveKey, this.haveAxe);
+      SpiralSeek s = new SpiralSeek(map, new Point2D.Double(curX, curY));
+      Point2D.Double explorationDestination = s.getTile(haveKey, haveAxe);
       //If the spiral seek algorithm successfully found a destination, it is guaranteed to be passable/reachable
       if (!explorationDestination.equals(new Point2D.Double(curX, curY))) {
         //Do A* traversal to exploration destination
-        addAStarPathToPendingMoves(new Point2D.Double(curX, curY), explorationDestination,
-          this.direction, this.haveKey, this.haveAxe);
+        addAStarPathToPendingMoves(new Point2D.Double(curX, curY), explorationDestination, direction, haveKey, haveAxe);
         break; //todo was continue
       }
 
@@ -574,13 +570,13 @@ public class State {
   }
 
   /**
-   * Delegates to getTileInFront(Point2D.Double tile, int curDirection) with curDirection equalling this.direction.
+   * Delegates to getTileInFront(Point2D.Double tile, int curDirection) with curDirection equalling direction.
    *
    * @param tile the tile we wish to look in front of
    * @return  the tile in front of tile
    */
   private Point2D.Double getTileInFront(Point2D.Double tile) {
-    return getTileInFront(tile, this.direction);
+    return getTileInFront(tile, direction);
   }
 
   /**
@@ -760,7 +756,7 @@ public class State {
   private void addAStarPathToPendingMoves(Point2D.Double start, Point2D.Double goal, int curDirection,
                                           boolean hasKey, boolean hasAxe) {
     //New AStar search
-    AStar a = new AStar(this.map, start, goal);
+    AStar a = new AStar(map, start, goal);
     a.search(hasKey, hasAxe);
 
     //Get optimal path
@@ -780,7 +776,7 @@ public class State {
       LinkedList<Character> alignMoves = getAlignmentMoves(curDirection, directionHeaded);
 
       //Add alignment moves to pendingMoves
-      this.pendingMoves.addAll(alignMoves);
+      pendingMoves.addAll(alignMoves);
 
       //Update curDirection to reflect alignMoves changes
       curDirection = directionHeaded;
@@ -788,13 +784,13 @@ public class State {
       //Check if we need to cut down a tree or unlock a door
       char nextTile = map.get(getTileInFront(element, curDirection));
       if (nextTile == OBSTACLE_TREE) {
-        this.pendingMoves.add(MOVE_CHOPTREE);
+        pendingMoves.add(MOVE_CHOPTREE);
       } else if (nextTile == OBSTACLE_DOOR) {
-        this.pendingMoves.add(MOVE_UNLOCKDOOR);
+        pendingMoves.add(MOVE_UNLOCKDOOR);
       }
 
       //Now we also need 1 forward move
-      this.pendingMoves.add(MOVE_GOFORWARD);
+      pendingMoves.add(MOVE_GOFORWARD);
     }
   }
 

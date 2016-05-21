@@ -78,21 +78,21 @@ public class SpiralSeek {
       if ((-maxX / 2 <= x) && (x <= maxX / 2) && (-maxY / 2 <= y) && (y <= maxY / 2)) {
         //Create new point to inspect
         //Offset this point by the start X and start Y as the original algorithm spirals from (0,0)
-        Point2D.Double newTile = new Point2D.Double(x +(int) this.start.getX() , y + (int) this.start.getY());
+        Point2D.Double newTile = new Point2D.Double(x +(int) start.getX() , y + (int) start.getY());
 
         //Ignore this tile if its the start
         if (newTile != start) {
           //Ensure this is a valid tile
-          if (this.map.get(newTile) != null) {
+          if (map.get(newTile) != null) {
             //Ensure tile is passable with our inventory
-            char newTileType = this.map.get(newTile);
+            char newTileType = map.get(newTile);
 
             if (State.isTilePassable(newTileType, hasKey, hasAxe)) {
               //Get priority
               if (isRevealingPoint(newTile)) {
                 //Guaranteed to reveal unknown tiles
                 //Ensure this tile is reachable
-                FloodFill ff = new FloodFill(this.map, start, newTile);
+                FloodFill ff = new FloodFill(map, start, newTile);
                 if (ff.isReachable(hasKey, hasAxe)) {
                   //Guaranteed to be reachable, return it
                   return newTile;
@@ -134,8 +134,8 @@ public class SpiralSeek {
       Point2D.Double offset = (Point2D.Double)obj;
       Point2D.Double surroundingPoint = new Point2D.Double(point.getX() + offset.getX(), point.getY() + offset.getY());
 
-      if (this.map.get(surroundingPoint) != null) {
-        char surroundingPointType = this.map.get(surroundingPoint);
+      if (map.get(surroundingPoint) != null) {
+        char surroundingPointType = map.get(surroundingPoint);
 
         //if this condition is true, the original point is revealing, return true
         if (surroundingPointType == State.OBSTACLE_UNKNOWN)

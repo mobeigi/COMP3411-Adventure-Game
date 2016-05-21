@@ -41,7 +41,7 @@ public class FloodFill {
 
     while (!q.isEmpty()) {
       Point2D.Double first = q.removeFirst();
-      char tile = this.map.get(first);
+      char tile = map.get(first);
 
       //If not processed
       if (!isConnected.contains(first)) {
@@ -84,6 +84,6 @@ public class FloodFill {
       }
     }
 
-    return isConnected.contains(this.goal);
+    return isConnected.contains(goal);
   }
 }
