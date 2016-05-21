@@ -60,6 +60,7 @@ public class State {
 
   private boolean needKey;
   private boolean needAxe;
+  private boolean needSS;
 
   private int curX;
   private int curY;
@@ -72,6 +73,8 @@ public class State {
   private Point2D.Double goldLocation; //coordinate of gold once it has been found
   private LinkedList<Point2D.Double> axeLocations;
   private LinkedList<Point2D.Double> keyLocations;
+  private LinkedList<Point2D.Double> ssLocations; //ss short for stepping stones
+  private LinkedList<Point2D.Double> waterLocations;
 
   /**
    * Constructor.
@@ -85,6 +88,7 @@ public class State {
 
     this.needKey = false;
     this.needAxe = false;
+    this.needSS = false;
 
     this.totalNumMoves = 0;
     this.pendingMoves = new LinkedList<>();
@@ -110,6 +114,8 @@ public class State {
     this.goldVisible = false;
     this.axeLocations = new LinkedList<>();
     this.keyLocations = new LinkedList<>();
+    this.ssLocations = new LinkedList<>();
+    this.waterLocations = new LinkedList<>();
   }
 
 
@@ -189,6 +195,12 @@ public class State {
         }
         else if (curTile == TOOL_KEY && !keyLocations.contains(newTile)) {
           keyLocations.add(newTile);
+        }
+        else if (curTile == TOOL_STEPPING_STONE && !ssLocations.contains(newTile)) {
+          ssLocations.add(newTile);
+        }
+        else if (curTile == OBSTACLE_WATER && !waterLocations.contains(newTile)) {
+          waterLocations.add(newTile);
         }
 
         //Update tile in map
@@ -307,6 +319,31 @@ public class State {
           break;
       }
 
+      if (needSS && !ssLocations.isEmpty()) {
+        boolean isSSAttainable = false;
+
+        for (Point2D.Double location : ssLocations) {
+          //Sanity check
+          if (map.get(location) == null || map.get(location) != TOOL_STEPPING_STONE) {
+            assert (false); //todo remove
+            continue;
+          }
+
+          //Is this location reachable?
+          FloodFill ff = new FloodFill(map, new Point2D.Double(curX, curY), location);
+          if (ff.isReachable(haveKey, haveAxe)) {
+            //Do A* traversal to location
+            addAStarPathToPendingMoves(new Point2D.Double(curX, curY), location, direction, haveKey, haveAxe);
+            isSSAttainable = true;
+            break; //get any reachable SS
+          }
+        }
+
+        //Leave loop so we can get the stepping stone
+        if (isSSAttainable)
+          break;
+      }
+
       //Stage 5: Explore to reveal unknown blocks
       SpiralSeek s = new SpiralSeek(map, new Point2D.Double(curX, curY));
       Point2D.Double explorationDestination = s.getTile(haveKey, haveAxe);
@@ -330,13 +367,52 @@ public class State {
         canGetResource = true;
       }
 
-      //If we can get a resource, go to next iteration so stage 4 can get us the key
+      if (!ssLocations.isEmpty()) {
+        needSS = true;
+        canGetResource = true;
+      }
+
+      //If we can get a resource, go to next iteration so stage 4 can get us the resource
       if (canGetResource)
         continue;
 
-      //Stage 7
+      //Stage 7: Need to use our stepping stones
+      boolean moveMade = false;
 
+      for (int i = 1; i <= num_stones_held && !moveMade; ++i) {
+        List<Point2D.Double[]> combinationList = new ArrayList<Point2D.Double[]>();
+        Point2D.Double[] arr = (Point2D.Double[])waterLocations.toArray(new Point2D.Double[waterLocations.size()]);
+        combinations(i, arr, combinationList); //get combinations
 
+        for (Point2D.Double[] group : combinationList) {
+
+          //Filter non adjacent point groups
+          //The only way to reach the objective is to use stepping stones on adjacent water tiles
+          //This filter also has performance benefits as we do cheap connectivity tests with no map compared to
+          //more costly flood fill searches on the actual map
+          if (!isPointGroupAdjacent(group))
+            continue;
+
+          //Replace every waterTile with a stepping stone placed tile for now
+          for (Point2D.Double waterTile : group) {
+            map.put(waterTile, TOOL_STEPPING_STONE_PLACED);
+          }
+
+          //Perform a reachability test to the gold
+          FloodFill ff = new FloodFill(map, new Point2D.Double(curX, curY), goldLocation);
+          if (ff.isReachable(haveKey, haveAxe)) {
+            //Do A* traversal to location
+            addAStarPathToPendingMoves(new Point2D.Double(curX, curY), goldLocation, direction, haveKey, haveAxe);
+            moveMade = true;
+            break;
+          }
+
+          //Restore stepping stones with original water
+          for (Point2D.Double waterTile : group) {
+            map.put(waterTile, OBSTACLE_WATER);
+          }
+        }
+      }
     }
 
     //Stage 1: If we reach this stage, we already had pending moves
@@ -450,7 +526,8 @@ public class State {
         break;
       case 'F':
         //Get tile directly in front of us, this is the tile we will be moving onto in this next move
-        nextTile = map.get(getTileInFront(new Point2D.Double(curX, curY)));
+        Point2D.Double nextTilePoint = getTileInFront(new Point2D.Double(curX, curY));
+        nextTile = map.get(nextTilePoint);
 
         //Moving forwards against a wall, door or tree is a NOP
         //We have to use C and U to remove doors/trees and walls cant be moved into at all
@@ -479,8 +556,12 @@ public class State {
         }
 
         //Collect tools
-        if (nextTile == TOOL_STEPPING_STONE)
+        if (nextTile == TOOL_STEPPING_STONE) {
+          if (ssLocations.contains(nextTilePoint)) //remove this stepping stone as we pick it up
+            ssLocations.remove(nextTilePoint);
+
           ++num_stones_held;
+        }
         else if (nextTile == TOOL_AXE) {
           haveAxe = true;
           needAxe = false;  //no longer need axes for rest of game
@@ -792,6 +873,119 @@ public class State {
       //Now we also need 1 forward move
       pendingMoves.add(MOVE_GOFORWARD);
     }
+  }
+
+  /**
+   * Given an arr array with date, creates combinations of depth n.
+   * See link for source.
+   *
+   * @param n depth of combinations
+   * @param arr array containing data
+   * @param list  empty array that is to be filled with all of the combinations
+   * @see <a href="https://stackoverflow.com/a/29910788/1800854">Algorithm to get all the combinations of size n
+   * from an array(by Raniz)</a>
+   */
+  private static void combinations(int n, Point2D.Double[] arr, List<Point2D.Double[]> list) {
+    // Calculate the number of arrays we should create
+    int numArrays = (int)Math.pow(arr.length, n);
+    // Create each array
+    for(int i = 0; i < numArrays; ++i) {
+      list.add(new Point2D.Double[n]);
+    }
+    // Fill up the arrays
+    for(int j = 0; j < n; ++j) {
+      // This is the period with which this position changes, i.e.
+      // a period of 5 means the value changes every 5th array
+      int period = (int) Math.pow(arr.length, n - j - 1);
+      for(int i = 0; i < numArrays; i++) {
+        Point2D.Double[] current = list.get(i);
+        // Get the correct item and set it
+        int index = i / period % arr.length;
+        current[j] = arr[index];
+      }
+    }
+  }
+
+  /**
+   * Perform a connectivity test using the FloodFill algorithm.
+   * A connected group of points is one where every point is reachable from any other point in the group.
+   *
+   * @param group group of points that are to be compared
+   * @return true if group array is of size 1 or less or all points are connected, false otherwise
+   */
+  private boolean isPointGroupAdjacent(Point2D.Double[] group) {
+    if (group.length <= 1)  //no points or single points are adjacent
+      return true;
+
+    Map<Point2D.Double, Character> tempMap = new HashMap<>();
+
+    //Do a flood fill search on a simplified map
+    LinkedList<Point2D.Double> q = new LinkedList<>();
+    Set<Point2D.Double> isConnected = new HashSet<>();
+    q.add(group[0]); //Pick first element to be the 'start' (any element will do)
+
+    while (!q.isEmpty()) {
+      Point2D.Double first = q.removeFirst();
+
+      //If not processed
+      if (!isConnected.contains(first)) {
+
+        //See if this is one of the elements in the group, if so we will process it
+        //Otherwise, it can be considered a unaccessible block
+        boolean isInGroup = false;
+        for (Point2D.Double point : group) {
+          if (first.equals(point)) {
+            isInGroup = true;
+            break;
+          }
+        }
+
+        if (!isInGroup)
+          continue;
+
+        //Mark as processed
+        isConnected.add(first);
+
+        //Add west, east, north, south nodes
+        for (int i = 0; i < 4; ++i) {
+          int neighbourX = (int)first.getX();
+          int neighbourY = (int)first.getY();
+
+          switch (i) {
+            case 0:
+              //Tile to right
+              neighbourX += 1;
+              break;
+            case 1:
+              //Tile to left
+              neighbourX -= 1;
+              break;
+            case 2:
+              //Tile above
+              neighbourY += 1;
+              break;
+            case 3:
+              //Tile below
+              neighbourY -= 1;
+              break;
+          }
+
+          Point2D.Double neighbour = new Point2D.Double(neighbourX, neighbourY);
+
+          if (!isConnected.contains(neighbour))
+            q.add(neighbour);
+        }
+      }
+    }
+
+    //Now ensure every point is connected
+    for (Point2D.Double point : group) {
+      if (!isConnected.contains(point))
+        return false;
+    }
+
+    //Here all points would have been connected so every tile is connected
+    return true;
   }
 
 }
