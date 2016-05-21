@@ -1,5 +1,4 @@
 import java.util.*;
-import java.io.*;
 import java.awt.geom.Point2D;
 
 /**
@@ -88,13 +87,13 @@ public class State {
     needAxe = false;
 
     totalNumMoves = 0;
-    pendingMoves = new LinkedList<Character>();
+    pendingMoves = new LinkedList<>();
     
     //(0,0) is the origin
     curX = curY = 0;
     
     //Prefill map with unknowns for reasonable bounds
-    map = new HashMap<Point2D.Double, Character>();
+    map = new HashMap<>();
 
     //You may assume that the specified environment is no larger than 80 by 80
     //However, as our starting origin is (0,0), our total boundary should be at least 80*2 by 80*2 or 160x160
@@ -109,8 +108,8 @@ public class State {
     map.put(new Point2D.Double(0, 0), DIRECTION_UP);
 
     goldVisible = false;
-    axeLocations = new LinkedList<Point2D.Double>();
-    keyLocations = new LinkedList<Point2D.Double>();
+    axeLocations = new LinkedList<>();
+    keyLocations = new LinkedList<>();
   }
 
 
@@ -260,9 +259,8 @@ public class State {
       if (needKey && !keyLocations.isEmpty()) {
         //Yes: Check if reachable with current inventory and traverse to it if so
         boolean isKeyAttainable = false;
-        for (int i = 0; i < keyLocations.size(); ++i) {
-          Point2D.Double location = keyLocations.get(i);
 
+        for (Point2D.Double location : keyLocations) {
           //Sanity check
           if (this.map.get(location) == null || this.map.get(location) != TOOL_KEY) {
             assert (false); //todo remove
@@ -289,9 +287,7 @@ public class State {
         //Yes: Check if reachable with current inventory and traverse to it if so
         boolean isAxeAttainable = false;
 
-        for (int i = 0; i < axeLocations.size(); ++i) {
-          Point2D.Double location = axeLocations.get(i);
-
+        for (Point2D.Double location : axeLocations) {
           //Sanity check
           if (this.map.get(location) == null || this.map.get(location) != TOOL_AXE) {
             assert (false); //todo remove
@@ -684,7 +680,7 @@ public class State {
   }
 
   //Returns moves that result in player facing the final direction based on initial direction
-  //Always returns the minimum costing moves (least number of moves to face final diretion)
+  //Always returns the minimum costing moves (least number of moves to face final direction)
 
 
   /**
@@ -697,7 +693,7 @@ public class State {
    *          or empty list if initialDirection equals finalDirection
    */
   private LinkedList<Character> getAlignmentMoves(int initialDirection, int finalDirection) {
-    LinkedList<Character> l = new LinkedList<Character>();
+    LinkedList<Character> l = new LinkedList<>();
 
     if (initialDirection == finalDirection) //no moves need, already aligned
       return l;
@@ -772,7 +768,7 @@ public class State {
     path.addLast(start); //add starting position to end of path (before reversal)
 
     //Iterate through moves in reverse so they are presented as moves from start -> goal
-    //We do not process the final (landing) tile as it is our destination, ie dont process i = 0
+    //We do not process the final (landing) tile as it is our destination, ie don't process i = 0
     for (int i = path.size() - 1; i >= 1; --i) {
       Point2D.Double element = path.get(i);
 

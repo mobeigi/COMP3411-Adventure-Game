@@ -15,9 +15,8 @@ import java.awt.geom.Point2D;
  * Pseudocode</a>
  */
 public class AStar {
-  private Point2D.Double start, goal;
-  private Map<Point2D.Double, Character> map;
-  private Set<Point2D.Double> closedSet;
+  private final Point2D.Double start, goal;
+  private final Map<Point2D.Double, Character> map;
   private Map<Point2D.Double, Point2D.Double> cameFrom;
 
   private Map<Point2D.Double, Integer> gScore;
@@ -38,11 +37,10 @@ public class AStar {
     this.map = map;
     this.start = start;
     this.goal = goal;
-    this.closedSet = new HashSet<Point2D.Double>();
-    this.cameFrom = new HashMap<Point2D.Double, Point2D.Double>();
+    this.cameFrom = new HashMap<>();
 
-    this.gScore = new HashMap<Point2D.Double, Integer>();
-    this.fScore = new HashMap<Point2D.Double, Integer>();
+    this.gScore = new HashMap<>();
+    this.fScore = new HashMap<>();
 
     this.searchCompleted = false;
   }
@@ -50,7 +48,7 @@ public class AStar {
   /**
    * Implements method compare in java.util.comparator
    *
-   * Sorts points based on their fscore. Points that have a lower fscore have lower cos
+   * Sorts points based on their fScore. Points that have a lower fScore have lower cos
    * and come earlier/before (as they have a higher priority)
    */
   private class FScoreSort implements Comparator<Point2D.Double> {
@@ -64,14 +62,16 @@ public class AStar {
    * Performs an A* search on the map environment from start to goal and fills 'cameFrom' with path information
    * to be reconstructed later.
    *
-   * @param hasKey if the player has the key, is used as arguments to isTilePassable to determineif we can pass
+   * @param hasKey if the player has the key, is used as arguments to isTilePassable to determine if we can pass
    *               through doors
    * @param hasAxe if the player has the axe, is used as arguments to isTilePassable to determine if we can pass
    *               through trees
    */
   public void search(boolean hasKey, boolean hasAxe) {
     FScoreSort fss = new FScoreSort();
-    PriorityQueue<Point2D.Double> openSet = new PriorityQueue<Point2D.Double>(10, fss); //todo: fine tune initial size
+    PriorityQueue<Point2D.Double> openSet = new PriorityQueue<>(10, fss); //todo: fine tune initial size
+
+    Set<Point2D.Double> closedSet  = new HashSet<>();
 
     //For every grid element
     //Todo: Can be lowered to cover 80by80 max dimensions
@@ -96,7 +96,7 @@ public class AStar {
       if (next != null) {
         if (fScore.get(currentTile) > fScore.get(next)) {
           System.out.println("ERROR: This should not happen! AStar priority mismatch");
-          System.out.println("Current fscore: " + fScore.get(currentTile) + ", next fscore: " + fScore.get(next));
+          System.out.println("Current fScore: " + fScore.get(currentTile) + ", next fScore: " + fScore.get(next));
         }
       }
       */
@@ -137,7 +137,7 @@ public class AStar {
 
         Point2D.Double neighbour = new Point2D.Double(neighbourX, neighbourY);
 
-        //Check if neighbour is in closedset
+        //Check if neighbour is in closedSet
         if (closedSet.contains(neighbour))
           continue;
 
@@ -160,7 +160,7 @@ public class AStar {
         fScore.put(neighbour, tentative_gScore + ManhattanDistanceHeuristic(neighbour, goal));
 
         //Explore this new neighbour
-        //This line must go after the fscore update line above so the priority queue updates correctly
+        //This line must go after the fScore update line above so the priority queue updates correctly
         if (!openSet.contains(neighbour))
           openSet.add(neighbour);
       }
@@ -194,7 +194,7 @@ public class AStar {
     if (!searchCompleted)
       throw new IllegalStateException("search() has not been called yet");
 
-    LinkedList<Point2D.Double> sequence = new LinkedList<Point2D.Double>();
+    LinkedList<Point2D.Double> sequence = new LinkedList<>();
     Point2D.Double u = this.goal;
 
     while (this.cameFrom.get(u) != null) {

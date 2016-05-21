@@ -16,8 +16,8 @@ import java.awt.geom.Point2D;
  * Spiral algorithm (by JHolta)</a>
  */
 public class SpiralSeek {
-  private Point2D.Double start;
-  private Map<Point2D.Double, Character> map;
+  private final Point2D.Double start;
+  private final Map<Point2D.Double, Character> map;
 
   //Offsets to reach 24 surrounding blocks of any block
   private static final List offsets = Arrays.asList(
@@ -129,8 +129,9 @@ public class SpiralSeek {
    */
   private boolean isRevealingPoint(Point2D.Double point) {
     //For every surrounding block
-    for (int i = 0; i < offsets.size(); ++i) {
-      Point2D.Double offset = (Point2D.Double)offsets.get(i);
+
+    for (Object obj : offsets) {
+      Point2D.Double offset = (Point2D.Double)obj;
       Point2D.Double surroundingPoint = new Point2D.Double(point.getX() + offset.getX(), point.getY() + offset.getY());
 
       if (this.map.get(surroundingPoint) != null) {

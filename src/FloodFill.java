@@ -15,9 +15,8 @@ import java.awt.geom.Point2D;
  */
 public class FloodFill {
 
-  private Point2D.Double start, goal;
-  private Map<Point2D.Double, Character> map;
-  private Set<Point2D.Double> isConnected;
+  private final Point2D.Double start, goal;
+  private final Map<Point2D.Double, Character> map;
 
   public FloodFill(Map<Point2D.Double, Character> map, Point2D.Double start, Point2D.Double goal) {
     this.map = map;
@@ -35,8 +34,8 @@ public class FloodFill {
    * @return true if goal point is reachable from start point, false otherwise
    */
   public boolean isReachable(boolean hasKey, boolean hasAxe) {
-    LinkedList<Point2D.Double> q = new LinkedList<Point2D.Double>();
-    this.isConnected = new HashSet<Point2D.Double>();
+    LinkedList<Point2D.Double> q = new LinkedList<>();
+    Set<Point2D.Double> isConnected = new HashSet<>();
 
     q.add(start);
 
