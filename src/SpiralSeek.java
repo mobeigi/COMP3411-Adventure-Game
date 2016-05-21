@@ -1,12 +1,20 @@
-/*
- * SpiralSeek
- *
- * Spiral method adapted from source: https://stackoverflow.com/questions/398299/looping-in-a-spiral/10607084#10607084
-*/
-
 import java.util.*;
 import java.awt.geom.Point2D;
 
+/**
+ * SpiralSeek class.
+ *
+ * Contains methods to find a reachable, passable and revealing point (if possible).
+ * Uses spiral algorithm which spirals outwards from any given point.
+ * The algorithm is a slightly modified version of the code linked below.
+ *
+ * @author Mohammad Ghasembeigi
+ * @version 1.4
+ * @see <a href="https://stackoverflow.com/questions/398299/looping-in-a-spiral/">Stack Overflow Spiral Algorithm
+ * question (answered by Can Berk Güder)</a>
+ * @see <a href="https://stackoverflow.com/questions/398299/looping-in-a-spiral/10607084#10607084">Java version of
+ * Spiral algorithm (by JHolta)</a>
+ */
 public class SpiralSeek {
   private Point2D.Double start;
   private Map<Point2D.Double, Character> map;
@@ -39,19 +47,25 @@ public class SpiralSeek {
     new Point2D.Double(2,2)
   );
 
+  /**
+   * Constructor.
+   *
+   * @param map the map containing information about the environment
+   * @param start the starting point from which we should spiral from
+   */
   public SpiralSeek(Map<Point2D.Double, Character> map, Point2D.Double start) {
     this.map = map;
     this.start = start;
   }
 
-  //Standard getTile
-  public Point2D.Double getTile() {
-    return getTile(false, false);
-  }
-
-  //Returns a point that is guaranteed to reveal unknown tiles when traversed to
-  //and is guaranteed to be reachable.
-  //If no suitable point is found, the start point is returned
+  /**
+   * Returns a tile that will reveal new information about the environment once travelled to.
+   *
+   * @param hasKey  if the player has the key, is used as arguments to FloodFill for visibility checks
+   * @param hasAxe  if the player has the axe, is used as arguments to FloodFill for visibility checks
+   * @return  true if a reachable, passable, and revealing point is found, otherwise the 'start' point is returned
+   * @see FloodFill
+   */
   public Point2D.Double getTile(boolean hasKey, boolean hasAxe) {
     //Begin generating points based on current location and spiral
     int x = 0, y = 0, dx = 0, dy = -1;
@@ -103,10 +117,16 @@ public class SpiralSeek {
     return start;
   }
 
-  //This acts as a evaluation method which tells us if a point is capable of revealing
-  //More information about the environment (revealing unknowns) if we traverse to it
-  //Essentially, we inspect the surrounding 24 points around it (view/sight range)
-  //and return true if any one of those blocks is an unknown, otherwise we return false
+  /**
+   * This method determines if a point is capable of revealing more information about the environment
+   * (revealing unknowns) if it is traversed to. It functions by inspecting the 24 points surrounding
+   * the point (equivalent to view range) and checking to see if any of those blocks are unknown. If
+   * they are then traversing to the point is guaranteed to reveal at least 1 unknown block, thus
+   * giving us more information about the environment overall.
+   *
+   * @param point the point being tested
+   * @return  true if any surrounding block is a block of type State.OBSTACLE_UNKNOWN, false otherwise
+   */
   private boolean isRevealingPoint(Point2D.Double point) {
     //For every surrounding block
     for (int i = 0; i < offsets.size(); ++i) {

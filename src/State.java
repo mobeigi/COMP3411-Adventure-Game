@@ -2,8 +2,17 @@ import java.util.*;
 import java.io.*;
 import java.awt.geom.Point2D;
 
+/**
+ * State class.
+ *
+ * Maintains internal map (model) of environment as well as the locations of resources (tools) and the gold.
+ * Also acts as a decision maker which makes new moves based on the current environment.
+ *
+ * @author Mohammad Ghasembeigi
+ * @version 1.8
+ */
 public class State {
-  //Definitions
+  //Class definitions
   
   //Direction (facing)
   final static int UP = 0;
@@ -65,6 +74,9 @@ public class State {
   private LinkedList<Point2D.Double> axeLocations;
   private LinkedList<Point2D.Double> keyLocations;
 
+  /**
+   * Constructor.
+   */
   public State() {
     //Init variables
     haveAxe = false;
@@ -100,12 +112,19 @@ public class State {
     axeLocations = new LinkedList<Point2D.Double>();
     keyLocations = new LinkedList<Point2D.Double>();
   }
-  
-  //Update map based on changes in view
-  public void updateFromView(char view[][]) {
-    //todo remove
-    System.out.println("curX: " + curX + ", curY: " + curY);
 
+
+  /**
+   * This method updated the internal map model based on the view provided.
+   * To accomplish this, the view is first rotated so it is aligned with our initial map direction (UP).
+   * Then all the tiles in the view are put into the map (overwriting any old values)
+   *
+   * This method also tracks new tools as they are found: goldLocation, keyLocations, axeLocation
+   * It also sets goldVisible to true if the gold is present in the view.
+   *
+   * @param view Grid containing tiles around our player.
+   */
+  public void updateFromView(char view[][]) {
 
     //Determine how many times to rotate our view so it is facing UP based on our initial map
     //This is required so we can use the same map update code regardless of the views direction
@@ -182,6 +201,13 @@ public class State {
     //this.printMap();
   }
 
+  /**
+   * This method makes our game playing decisions and returns 1 valid move when called (L,R,F,C,U).
+   *
+   * todo: either link to program flow discussion or paste it here
+   *
+   * @return a valid move (as a character) corresponding to next move the player will make
+   */
   public char makeMove() {
 
     //Stage 1
@@ -191,8 +217,8 @@ public class State {
       //Stage 2: Do we have gold
       //Yes: Do A* traversal to starting location, aka (0,0)
       if (haveGold) {
-        addAStarPathToPendingMoves(new Point2D.Double(curX, curY), new Point2D.Double(0, 0), this.direction, this.haveKey, this.haveAxe);
-        //moveMade = true;
+        addAStarPathToPendingMoves(new Point2D.Double(curX, curY),
+          new Point2D.Double(0, 0), this.direction, this.haveKey, this.haveAxe);
         break;
       }
 
@@ -202,7 +228,8 @@ public class State {
         FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), goldLocation);
         if (ff.isReachable(this.haveKey, this.haveAxe)) {
           //Yes: Do A* traversal to gold
-          addAStarPathToPendingMoves(new Point2D.Double(curX, curY), goldLocation, this.direction, this.haveKey, this.haveAxe);
+          addAStarPathToPendingMoves(new Point2D.Double(curX, curY), goldLocation,
+            this.direction, this.haveKey, this.haveAxe);
           break;
         } else {
           //Now we do some theoretical reachability tests
@@ -229,7 +256,6 @@ public class State {
       }
 
       //Stage 4: Do we know location of a needed resources?
-      //Note that if we fail to find a key (ie no moveMade = true), we can still try to find an axe
       //todo: add logic to pick closest (man dist) one rather than breaking
       if (needKey && !keyLocations.isEmpty()) {
         //Yes: Check if reachable with current inventory and traverse to it if so
@@ -247,7 +273,8 @@ public class State {
           FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), location);
           if (ff.isReachable(this.haveKey, this.haveAxe)) {
             //Do A* traversal to location
-            addAStarPathToPendingMoves(new Point2D.Double(curX, curY), location, this.direction, this.haveKey, this.haveAxe);
+            addAStarPathToPendingMoves(new Point2D.Double(curX, curY), location,
+              this.direction, this.haveKey, this.haveAxe);
             isKeyAttainable = true;
             break; //any key will do, we only need one
           }
@@ -275,7 +302,8 @@ public class State {
           FloodFill ff = new FloodFill(this.map, new Point2D.Double(curX, curY), location);
           if (ff.isReachable(this.haveKey, this.haveAxe)) {
             //Do A* traversal to location
-            addAStarPathToPendingMoves(new Point2D.Double(curX, curY), location, this.direction, this.haveKey, this.haveAxe);
+            addAStarPathToPendingMoves(new Point2D.Double(curX, curY), location,
+              this.direction, this.haveKey, this.haveAxe);
             isAxeAttainable = true;
             break; //any axe will do, we only need one
           }
@@ -292,7 +320,8 @@ public class State {
       //If the spiral seek algorithm successfully found a destination, it is guaranteed to be passable/reachable
       if (!explorationDestination.equals(new Point2D.Double(curX, curY))) {
         //Do A* traversal to exploration destination
-        addAStarPathToPendingMoves(new Point2D.Double(curX, curY), explorationDestination, this.direction, this.haveKey, this.haveAxe);
+        addAStarPathToPendingMoves(new Point2D.Double(curX, curY), explorationDestination,
+          this.direction, this.haveKey, this.haveAxe);
         break; //todo was continue
       }
 
@@ -314,7 +343,7 @@ public class State {
         continue;
 
       //Stage 7
-      System.out.println("DISASTER!!!");
+
 
     }
 
@@ -337,9 +366,8 @@ public class State {
     }
 
 
-
-
     //todo: remove below manual movement
+    /*
     int ch = 0;
 
     System.out.print("Enter Action(s): ");
@@ -370,10 +398,20 @@ public class State {
     }
 
     return 0;
+    */
+
+    return 0;
   }
 
   //Update map based on changes from a move
   //todo: optimize switch statements for direction
+
+
+  /**
+   * Updates the internal map as well as other variables (ie tool inventory) based on move the player is about to make.
+   *
+   * @param move the move (as a character) that has been made
+   */
   private void updateFromMove(char move) {
     move = Character.toUpperCase(move); //moves should be uppercase
     char nextTile;
@@ -489,16 +527,23 @@ public class State {
     }
   }
 
-  //Print map (rotating map)
+  /**
+   * For debugging purposes.
+   *
+   * This method can be called, ideally at the end of updateFromView() to display the internal map which models the
+   * environment. Some useful statistic are printed above the map such as current location coordinates and resources.
+   */
   private void printMap() {
-    System.out.print("\nRotating Map\n");
+    System.out.print("\nInternal Map\n");
     System.out.print("------------------------\n");
 
     String strGold = haveGold ? "true" : "false";
     String strKey = haveKey ? "true" : "false";
     String strAxe = haveAxe ? "true" : "false";
 
-    System.out.print("Total moves: " + totalNumMoves + "| Gold: " + strGold + "| Key: " + haveKey + "| Axe: " + haveAxe + "| Stepping Stones: " + num_stones_held);
+    System.out.println("curX: " + curX + ", curY: " + curY);
+    System.out.print("Total moves: " + totalNumMoves + "| Gold: " + strGold + "| Key: " + haveKey + "| Axe: " +
+      haveAxe + "| Stepping Stones: " + num_stones_held);
     System.out.print("\n");
 
     //Traverse map showing grid from top left to bottom right
@@ -512,8 +557,14 @@ public class State {
     }
   }
 
-  //Helper function to rotate matrix clockwise
-  //From: https://stackoverflow.com/a/2800033/1800854
+  /**
+   * Helper method which rotates a character grid clockwise.
+   * Adapted from source linked below.
+   *
+   * @param mat matrix that is to be rotated in a clockwise direction
+   * @return matrix rotated in a clockwise direction
+   * @see <a href="https://stackoverflow.com/a/2800033/1800854">Matrix CW rotation code (by polygenelubricants)</a>
+   */
   private static char[][] rotateCW(char[][] mat) {
     final int M = mat.length;
     final int N = mat[0].length;
@@ -526,11 +577,24 @@ public class State {
     return ret;
   }
 
-  //Get the tile directly in front of the provided tile
+  /**
+   * Delegates to getTileInFront(Point2D.Double tile, int curDirection) with curDirection equalling this.direction.
+   *
+   * @param tile the tile we wish to look in front of
+   * @return  the tile in front of tile
+   */
   private char getTileInFront(Point2D.Double tile) {
     return getTileInFront(tile, this.direction);
   }
 
+  /**
+   *  Returns the tile directly in front of tile.
+   *  Used to make decisions regarding the forward move.
+   *
+   * @param tile  the tile we wish to look in front of
+   * @param curDirection  the direction we are facing (UP, RIGHT, DOWN, LEFT)
+   * @return  the tile in front of tile
+   */
   private char getTileInFront(Point2D.Double tile, int curDirection) {
     int nextX = (int)tile.getX();
     int nextY = (int)tile.getY();
@@ -557,6 +621,16 @@ public class State {
   }
 
   //Returns true if tile is passable based on items we have
+
+  /**
+   * Determines if a tile is passable. A passable tile is any tile that can me moved into
+   * (so player is standing on it) that does not cause the player to lose the game.
+   *
+   * @param tile  the tile we are checking to see if it is passable
+   * @param hasKey  does the player possess the key, used to determine if doors are passable
+   * @param hasAxe  does the player possess the axe, used to determine if trees are passable
+   * @return  true if tile is passable, false otherwise
+   */
   public static boolean isTilePassable(char tile, boolean hasKey, boolean hasAxe) {
     //If tile does not meet one of the conditions below, it is NOT passable
     return (  (tile == State.OBSTACLE_SPACE) ||
@@ -574,8 +648,15 @@ public class State {
             );
   }
 
-  //Returns adjacent tile direction between two tiles, either UP, DOWN, LEFT, RIGHT
-  //Returns -1 if non-adjacent tiles
+  /**
+   *  Returns the direction (4-way) that you must travel to get from the start point
+   *  to the goal point.
+   *
+   * @param start the starting point
+   * @param goal  the goal point
+   * @return  direction to travel(UP, RIGHT, DOWN, LEFT) to get from start to goal
+   *          or -1 if non-adjacent tiles or start and goal points are the same
+   */
   private int getAdjacentTileDirection(Point2D.Double start, Point2D.Double goal) {
     int xDiff = (int)(goal.getX() - start.getX());
     int yDiff = (int)(goal.getY() - start.getY());
@@ -604,6 +685,17 @@ public class State {
 
   //Returns moves that result in player facing the final direction based on initial direction
   //Always returns the minimum costing moves (least number of moves to face final diretion)
+
+
+  /**
+   * Returns a list of moves needed to ensure that the initial and final directions are aligned.
+   * That is, to ensure that after moves are carried out, initialDirection will be equal to finalDirection
+   *
+   * @param initialDirection  direction player is facing
+   * @param finalDirection  final direction player should be facing
+   * @return  list of moves that should be completed to ensure direction alignment
+   *          or empty list if initialDirection equals finalDirection
+   */
   private LinkedList<Character> getAlignmentMoves(int initialDirection, int finalDirection) {
     LinkedList<Character> l = new LinkedList<Character>();
 
@@ -636,21 +728,43 @@ public class State {
     return l;
   }
 
-  //todo: make static?
-  //Modulo function (does not produce negatives)
-  private int mod(int x, int y) {
-    int result = x % y;
+  /**
+   * Helper modulo function.
+   * The value of an integer modulo m is equal to the remainder left when the number is divided by m.
+   *
+   * @param n the integer to be divided
+   * @param m the divisor (modulus)
+   * @return positive modulo result, that is: n (mod m)) where n >= 0 && n < m
+   */
+  private int mod(int n, int m) { //todo: make static?
+    int result = n % m;
     if (result < 0)
-      result += y;
+      result += m;
 
     return result;
   }
 
-  //Using A*, calculated the min path from start to end, given curDirection, hasKey and hasAxe
-  //Then calculates all moves needed to reach destination and adds them to the pending moves queue
-  private void addAStarPathToPendingMoves(Point2D.Double start, Point2D.Double end, int curDirection, boolean hasKey, boolean hasAxe) {
+  /**
+   * Utilises the AStar class to perform an A* algorithm on the current map to get from start to goal
+   * given the current direction and inventory.
+   *
+   * Then gathers the path and adjusts it to create a list of moves that the player can take to reach
+   * the goal. This list of moves is then added to the pendingMoves queue.
+   *
+   * Precondition: This method assumes that goal is reachable from start. Only call this method if a
+   * successful reachability test has been completed from start to goal given the map, current direction
+   * and inventory.
+   *
+   * @param start the starting point (typically the current player position)
+   * @param goal the goal point (destination player is attempting to reach)
+   * @param curDirection  the direction player is facing
+   * @param hasKey  if the player has the key
+   * @param hasAxe  if te player has the axe
+   */
+  private void addAStarPathToPendingMoves(Point2D.Double start, Point2D.Double goal, int curDirection,
+                                          boolean hasKey, boolean hasAxe) {
     //New AStar search
-    AStar a = new AStar(this.map, start, end);
+    AStar a = new AStar(this.map, start, goal);
     a.search(hasKey, hasAxe);
 
     //Get optimal path

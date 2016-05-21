@@ -1,17 +1,19 @@
-/*
- * FloodFill
- *
- * Can take in any start and goal (as Points) and will tell you if its reachable.
- * Can be filtered to treat different obstacles as passable
- *
- * Based on psuedocode at: https://en.wikipedia.org/wiki/Flood_fill#Alternative_implementations
-*/
-
 import java.util.*;
 import java.awt.geom.Point2D;
 
+/**
+ * FloodFill class.
+ *
+ * Implements the FloodFill algorithm to do quick (low computation time) and easy reachability tests.
+ * Based on Flood Fill pseudocode from Wikipedia (see link).
+ * Alternative non-recursive implementation was selected to avoid heap space issues in Java runtime.
+ *
+ * @author Mohammad Ghasembeigi
+ * @version 1.0
+ * @see <a href="https://en.wikipedia.org/wiki/Flood_fill#Alternative_implementations">Wikipedia - Flood Fill
+ * Pseudocode Alternative implementation</a>
+ */
 public class FloodFill {
-
 
   private Point2D.Double start, goal;
   private Map<Point2D.Double, Character> map;
@@ -23,11 +25,15 @@ public class FloodFill {
     this.goal = goal;
   }
 
-  //Standard flood fill
-  public boolean isReachable() {
-    return isReachable(false, false);
-  }
-
+  /**
+   * Performs a FloodFill reachable test on the map environment from start to goal.
+   *
+   * @param hasKey if the player has the key, is used as arguments to isTilePassable to determine if we can pass
+   *               through doors
+   * @param hasAxe if the player has the axe, is used as arguments to isTilePassable to determine if we can pass
+   *               through trees
+   * @return true if goal point is reachable from start point, false otherwise
+   */
   public boolean isReachable(boolean hasKey, boolean hasAxe) {
     LinkedList<Point2D.Double> q = new LinkedList<Point2D.Double>();
     this.isConnected = new HashSet<Point2D.Double>();

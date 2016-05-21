@@ -1,14 +1,19 @@
-/*
- * Using G = 1 for 4-way movement
- * Using Manhattan heuristic
- *
- * Psuedocode: https://en.wikipedia.org/wiki/A*_search_algorithm#Pseudocode
-*/
-
-import java.awt.*;
 import java.util.*;
 import java.awt.geom.Point2D;
 
+/**
+ * AStar class.
+ *
+ * Capable of performing the A* algorithm on a 2D-grid given a map, a start point and a goal (destination) point.
+ * The G cost for each adjacent move (4-way movement) is 1.
+ * The heuristic selected is the Manhattan distance heuristic (ideal for our game scenario).
+ * Code based on Wikipedia A* algorithm pseudocode (see link below).
+ *
+ * @author Mohammad Ghasembeigi
+ * @version 1.2
+ * @see <a href="https://en.wikipedia.org/wiki/A*_search_algorithm#Pseudocode">Wikipedia - A* Search Algorithm
+ * Pseudocode</a>
+ */
 public class AStar {
   private Point2D.Double start, goal;
   private Map<Point2D.Double, Character> map;
@@ -18,8 +23,17 @@ public class AStar {
   private Map<Point2D.Double, Integer> gScore;
   private Map<Point2D.Double, Integer> fScore;
 
-  private static final int INFINITY_COST = 90; //represents infinity
+  private boolean searchCompleted;
 
+  private static final int INFINITY_COST = 999999; //represents an infinite value
+
+  /**
+   *  Constructor.
+   *
+   * @param map the map containing information about the environment
+   * @param start the starting point we begin to search from
+   * @param goal  the goal point which we will try to find the shortest path to
+   */
   public AStar(Map<Point2D.Double, Character> map, Point2D.Double start, Point2D.Double goal) {
     this.map = map;
     this.start = start;
@@ -29,23 +43,35 @@ public class AStar {
 
     this.gScore = new HashMap<Point2D.Double, Integer>();
     this.fScore = new HashMap<Point2D.Double, Integer>();
+
+    this.searchCompleted = false;
   }
 
-  private class PQsort implements Comparator<Point2D.Double> {
+  /**
+   * Implements method compare in java.util.comparator
+   *
+   * Sorts points based on their fscore. Points that have a lower fscore have lower cos
+   * and come earlier/before (as they have a higher priority)
+   */
+  private class FScoreSort implements Comparator<Point2D.Double> {
+    @Override
     public int compare(Point2D.Double one, Point2D.Double two) {
-      //System.out.println("fscore one: " + fScore.get(one) + ", fscore two:" + fScore.get(two)); //todo: remove
       return fScore.get(one) - fScore.get(two);
     }
   }
 
-  //Standard AStar
-  public void search() {
-    search(false, false);
-  }
-
+  /**
+   * Performs an A* search on the map environment from start to goal and fills 'cameFrom' with path information
+   * to be reconstructed later.
+   *
+   * @param hasKey if the player has the key, is used as arguments to isTilePassable to determineif we can pass
+   *               through doors
+   * @param hasAxe if the player has the axe, is used as arguments to isTilePassable to determine if we can pass
+   *               through trees
+   */
   public void search(boolean hasKey, boolean hasAxe) {
-    PQsort pqs = new PQsort();
-    PriorityQueue<Point2D.Double> openSet = new PriorityQueue<Point2D.Double>(10, pqs); //todo: fine tune initial size
+    FScoreSort fss = new FScoreSort();
+    PriorityQueue<Point2D.Double> openSet = new PriorityQueue<Point2D.Double>(10, fss); //todo: fine tune initial size
 
     //For every grid element
     //Todo: Can be lowered to cover 80by80 max dimensions
@@ -78,6 +104,7 @@ public class AStar {
       //Check if current tile is the goal tile
       if (currentTile.equals(this.goal)) {
         //Return here, at this stage, getPath() can be called to reconstruct the path
+        searchCompleted = true;
         return;
       }
 
@@ -139,22 +166,39 @@ public class AStar {
       }
     }
 
-    //At this point, failed to find path
+    //At this point, failed to find a path and the search is over
+    searchCompleted = true;
   }
 
+  /**
+   *  Computes the manhattan distance formula for two points: start and goal
+   *
+   * @param start starting point to be used in the manhattan distance calculation
+   * @param goal  goal point to be used in the manhattan distance calculation
+   * @return  the heuristic result (cost) of traversing from start to goal (guaranteed to be admissible)
+   */
   private int ManhattanDistanceHeuristic(Point2D.Double start, Point2D.Double goal) {
     return Math.abs((int)start.getX() - (int)goal.getX()) + Math.abs((int)start.getY() - (int)goal.getY());
   }
 
-  //Returns path traversed
-  //Call search() before this
+  /**
+   * Returns minimum path from start to goal as determined in search() or empty linked list if no path was found.
+   * Precondition: a call to search() has been made before this method is called
+   *
+   * @return LinkedList of Point2D.Double objects that form a path from goal to start (excluding start point) which
+   *         should be reversed before being used. Otherwise, empty LinkedList meaning no path was found.
+   * @throws IllegalStateException if search() is not called before this method is called
+   */
   public LinkedList<Point2D.Double> getPath() {
+
+    if (!searchCompleted)
+      throw new IllegalStateException("search() has not been called yet");
+
     LinkedList<Point2D.Double> sequence = new LinkedList<Point2D.Double>();
     Point2D.Double u = this.goal;
 
     while (this.cameFrom.get(u) != null) {
       sequence.add(u);
-
       u = this.cameFrom.get(u);
     }
 
