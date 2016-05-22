@@ -946,7 +946,8 @@ public class State {
    */
   private static void combinations(int n, Point2D.Double[] arr, List<Point2D.Double[]> list) {
     // Calculate the number of arrays we should create
-    int numArrays = (int)Math.pow(arr.length, n);
+    long numArrays = binomial(arr.length, n); //use binomial here instead of power as positions do not matter
+    
     // Create each array
     for(int i = 0; i < numArrays; ++i) {
       list.add(new Point2D.Double[n]);
@@ -963,6 +964,25 @@ public class State {
         current[j] = arr[index];
       }
     }
+  }
+
+  /**
+   * Helper function: Calculate binomial coefficient.
+   *
+   * @param n number of possibilities to pick
+   * @param k unordered outcomes
+   * @return  binomial coefficient, ie (n, k)
+   * @see <a href="https://stackoverflow.com/a/36926193/1800854">Binomial Coeffecient method (by Chris Sherlock)</a>
+   */
+  private static long binomial(int n, int k)
+  {
+    if (k>n-k)
+      k=n-k;
+
+    long b=1;
+    for (int i=1, m=n; i<=k; i++, m--)
+      b=b*m/i;
+    return b;
   }
 
   /**
