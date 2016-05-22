@@ -282,9 +282,6 @@ public class State {
           }
 
           if (nextTile == OBSTACLE_TEMPORARY_WATER) {
-            if (num_stones_held > 0) {
-              --num_stones_held; //we will place a stone on the water
-            }
             map.put(nextTilePoint, OBSTACLE_STEPPING_STONE_PLACED);
           }
 

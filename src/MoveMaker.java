@@ -260,13 +260,13 @@ public class MoveMaker {
           break;
       }
 
-      //Try to get to the area near another axe (don't prefer if we already have axe)
+      //Try to get to the area near another space
       if (!state.getSpaceLocations().isEmpty()) {
         boolean canGetToNewArea = false;
         for (Point2D.Double location : state.getSpaceLocations()) {
-          //Ensure this blank space is reachable from our current player location
+          //Ensure this blank space is not reachable from our current player location
           FloodFill ff = new FloodFill(state.getMap(), state.getPlayerLocation(), location);
-          if (ff.isReachable(state.haveKey(), state.haveAxe())) {
+          if (!ff.isReachable(state.haveKey(), state.haveAxe())) {
             if (useSteppingStoneTowardsGoal(location)) {
               canGetToNewArea = true;
               break;
