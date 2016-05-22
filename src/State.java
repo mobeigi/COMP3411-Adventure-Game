@@ -428,8 +428,8 @@ public class State {
           break;
       }
 
-      //Try to get to the area near another key
-      if (!keyLocations.isEmpty()) {
+      //Try to get to the area near another key (don't prefer if we already have key)
+      if (!keyLocations.isEmpty() && !haveKey) {
         boolean canGetToNewArea = false;
         for (Point2D.Double location : keyLocations) {
           if (useSteppingStoneTowardsGoal(location)) {
@@ -442,8 +442,8 @@ public class State {
           break;
       }
 
-      //Try to get to the area near another axe
-      if (!axeLocations.isEmpty()) {
+      //Try to get to the area near another axe (don't prefer if we already have axe)
+      if (!axeLocations.isEmpty() && !haveAxe) {
         boolean canGetToNewArea = false;
         for (Point2D.Double location : axeLocations) {
           if (useSteppingStoneTowardsGoal(location)) {
