@@ -40,11 +40,11 @@ public class SpiralSeek {
     new Point2D.Double(-1,0),
     new Point2D.Double(-1,1),
     new Point2D.Double(-1,2),
-    new Point2D.Double(2,-2),
-    new Point2D.Double(2,-1),
-    new Point2D.Double(2,0),
-    new Point2D.Double(2,1),
-    new Point2D.Double(2,2)
+    new Point2D.Double(-2,-2),
+    new Point2D.Double(-2,-1),
+    new Point2D.Double(-2,0),
+    new Point2D.Double(-2,1),
+    new Point2D.Double(-2,2)
   );
 
   /**

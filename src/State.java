@@ -216,7 +216,7 @@ public class State {
     }
     
     //todo: remove this
-    printMap();
+    //printMap();
   }
 
   /**
@@ -466,11 +466,11 @@ public class State {
     //The conditional guard of the previous while loop ensures there are pending moves if we reach here
     if (!pendingMoves.isEmpty()) {  //this check is required as pendingMoves may change after the first check
       //Todo: remove before submission, slow down moves for us
-      try {
-       Thread.sleep(100);
-      } catch(InterruptedException ex) {
-        Thread.currentThread().interrupt();
-      }
+      //try {
+      // Thread.sleep(100);
+      //} catch(InterruptedException ex) {
+      //  Thread.currentThread().interrupt();
+      //}
 
       ++totalNumMoves;
       char moveToMake = pendingMoves.remove();
