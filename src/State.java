@@ -33,12 +33,13 @@ public class State {
   final static char OBSTACLE_WALL = '*';
   final static char OBSTACLE_UNKNOWN = '?';
   final static char OBSTACLE_BOUNDARY = '.';
+  final static char OBSTACLE_TEMPORARY_WATER = '#'; //water that will soon be turned into OBSTACLE_STEPPING_STONE_PLACED
+  final static char OBSTACLE_STEPPING_STONE_PLACED = 'O';
   
   //Tools
   final static char TOOL_AXE = 'a';
   final static char TOOL_KEY = 'k';
   final static char TOOL_STEPPING_STONE = 'o';
-  final static char TOOL_STEPPING_STONE_PLACED = 'O';
   final static char TOOL_GOLD = 'g';
 
   //Moves
@@ -202,6 +203,12 @@ public class State {
         else if (curTile == OBSTACLE_WATER && !waterLocations.contains(newTile)) {
           waterLocations.add(newTile);
         }
+
+
+        //Special filter, don't replace this tile with water!
+        //That will be handled when we reach the temporary water
+        if (map.get(newTile) != null && map.get(newTile) == OBSTACLE_TEMPORARY_WATER)
+          continue;
 
         //Update tile in map
         map.put(newTile, curTile);
@@ -402,8 +409,10 @@ public class State {
       //So any tools we still see on the map are guaranteed to be unreachable (without using stepping stones)
 
       //Try to get to the area near gold
-      if (useSteppingStoneTowardsGoal(goldLocation))
-        break;
+      if (goldVisible) {
+        if (useSteppingStoneTowardsGoal(goldLocation))
+          break;
+      }
 
       //Try to get to the area near another stepping stone
       if (!ssLocations.isEmpty()) {
@@ -458,7 +467,7 @@ public class State {
     if (!pendingMoves.isEmpty()) {  //this check is required as pendingMoves may change after the first check
       //Todo: remove before submission, slow down moves for us
       //try {
-      //  Thread.sleep(100);
+      // Thread.sleep(100);
       //} catch(InterruptedException ex) {
       //  Thread.currentThread().interrupt();
       //}
@@ -575,14 +584,27 @@ public class State {
           )
           break;
 
-        if (nextTile == OBSTACLE_WATER) {
+        //Handle water and temporary water
+        if (nextTile == OBSTACLE_WATER || nextTile == OBSTACLE_TEMPORARY_WATER) {
           if (num_stones_held > 0) {
             --num_stones_held; //we will place a stone on the water
-          } else {
-            //Certain death
-            //todo: handle this maybe
-            System.out.println("CERTAIN DEATH IN updateFromMove()");
           }
+
+          if (nextTile == OBSTACLE_TEMPORARY_WATER) {
+            if (num_stones_held > 0) {
+              --num_stones_held; //we will place a stone on the water
+            }
+            map.put(nextTilePoint, OBSTACLE_STEPPING_STONE_PLACED);
+          }
+
+          waterLocations.remove(nextTilePoint); //no longer water
+        }
+
+
+        if (nextTile == OBSTACLE_WATER && num_stones_held == 0) {
+          //Certain death
+          //todo: handle this maybe
+          System.out.println("CERTAIN DEATH IN updateFromMove()");
         }
 
         if (nextTile == OBSTACLE_BOUNDARY) {
@@ -743,7 +765,8 @@ public class State {
   public static boolean isTilePassable(char tile, boolean hasKey, boolean hasAxe) {
     //If tile does not meet one of the conditions below, it is NOT passable
     return (  (tile == State.OBSTACLE_SPACE) ||
-              (tile == State.TOOL_STEPPING_STONE_PLACED) ||
+              (tile == State.OBSTACLE_STEPPING_STONE_PLACED) ||
+              (tile == State.OBSTACLE_TEMPORARY_WATER) ||
               (tile == State.TOOL_AXE) ||
               (tile == State.TOOL_KEY) ||
               (tile == State.TOOL_GOLD) ||
@@ -1056,9 +1079,9 @@ public class State {
         if (!isPointGroupAdjacent(group))
           continue;
 
-        //Replace every waterTile with a stepping stone placed tile for now
+        //Replace every waterTile with a temporary water block for now
         for (Point2D.Double waterTile : group) {
-          map.put(waterTile, TOOL_STEPPING_STONE_PLACED);
+          map.put(waterTile, OBSTACLE_TEMPORARY_WATER);
         }
 
         //Perform a reachability test to the goal
