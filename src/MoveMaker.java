@@ -273,13 +273,6 @@ public class MoveMaker {
     //Lets complete the pending moves
     //The conditional guard of the previous while loop ensures there are pending moves if we reach here
     if (!pendingMoves.isEmpty()) {  //this check is required as pendingMoves may change after the first check
-      //Todo: remove before submission, slow down moves for us
-      //try {
-      // Thread.sleep(100);
-      //} catch(InterruptedException ex) {
-      //  Thread.currentThread().interrupt();
-      //}
-
       char moveToMake = pendingMoves.remove();
       char nextTile = state.getMap().get(state.getTileInFront(state.getPlayerLocation()));
 
@@ -589,7 +582,7 @@ public class MoveMaker {
    * @param list  empty array that is to be filled with all of the combinations
    * @see <a href="https://stackoverflow.com/a/29910788/1800854">Algorithm to get all the combinations of size n
    * from an array(by Raniz)</a>
-   * @see MoveMaker#isPointGroupAdjacent(Point2D.Double[]) uses this function to filter list (memory optimization)
+   * @see MoveMaker#isPointGroupAdjacent(List) uses this function to filter list (memory optimization)
    */
   private void getAdjacentcombinations(int n, Point2D.Double[] arr, List<Point2D.Double[]> list) {
     // Calculate the number of arrays we should create

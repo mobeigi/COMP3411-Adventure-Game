@@ -50,7 +50,7 @@ public class FloodFill {
       //If not processed
       if (!isConnected.contains(first)) {
         //Apply filters
-        //Doors/Trees are judged passable based on passed parameters
+        //Non-passable tiles are ignored
         if (!State.isTilePassable(tile, hasKey, hasAxe))
           continue; //this tile is not passable
 
