@@ -216,7 +216,7 @@ public class State {
     }
     
     //todo: remove this
-    //printMap();
+    printMap();
   }
 
   /**
@@ -466,11 +466,11 @@ public class State {
     //The conditional guard of the previous while loop ensures there are pending moves if we reach here
     if (!pendingMoves.isEmpty()) {  //this check is required as pendingMoves may change after the first check
       //Todo: remove before submission, slow down moves for us
-      //try {
-      // Thread.sleep(100);
-      //} catch(InterruptedException ex) {
-      //  Thread.currentThread().interrupt();
-      //}
+      try {
+       Thread.sleep(100);
+      } catch(InterruptedException ex) {
+        Thread.currentThread().interrupt();
+      }
 
       ++totalNumMoves;
       char moveToMake = pendingMoves.remove();
@@ -1059,11 +1059,12 @@ public class State {
    *
    * @param goal unreachable destination goal
    * @return true if goal is reachable if stepping stones are used on various water tiles
-   *              (moves also added via addAStarPathToPendingMoves as sideeffect), false otherwise
+   *              (moves also added via addAStarPathToPendingMoves as side effect), false otherwise
    * @see State#addAStarPathToPendingMoves(Point2D.Double, Point2D.Double, int, boolean, boolean)
    */
   private boolean useSteppingStoneTowardsGoal(Point2D.Double goal) {
     boolean moveMade = false;
+    List<Point2D.Double[]> solutionGroup = new ArrayList<Point2D.Double[]>(); //stores all possible solutions
 
     for (int i = 1; i <= num_stones_held && !moveMade; ++i) {
       List<Point2D.Double[]> combinationList = new ArrayList<Point2D.Double[]>();
@@ -1088,9 +1089,10 @@ public class State {
         FloodFill ff = new FloodFill(map, new Point2D.Double(curX, curY), goal);
         if (ff.isReachable(haveKey, haveAxe)) {
           //Do A* traversal to location
-          addAStarPathToPendingMoves(new Point2D.Double(curX, curY), goal, direction, haveKey, haveAxe);
+          //addAStarPathToPendingMoves(new Point2D.Double(curX, curY), goal, direction, haveKey, haveAxe);
+          solutionGroup.add(group);
           moveMade = true;
-          break;
+          //break;
         }
 
         //Restore stepping stones with original water
@@ -1100,7 +1102,40 @@ public class State {
       }
     }
 
+    //Check for best solution based on distance to gold
+    if (!solutionGroup.isEmpty()) {
+      int selectedIndex = 0; //initially pick first solution (default)
+
+      if (goldVisible) { //any solution is fine if gold isn't visible
+        int minCost = 999999; //represents infinity
+
+        for (int i = 0; i < solutionGroup.size(); ++i) {
+          Point2D.Double[] group = solutionGroup.get(i);
+          int groupCost = 0;
+
+          //Pick solution closest to gold
+          for (Point2D.Double solution : group) {
+            //Manhattan distance
+            groupCost += (Math.abs((int) solution.getX() - (int) goldLocation.getX()) +
+              Math.abs((int) solution.getY() - (int) goldLocation.getY()));
+          }
+
+          if (groupCost < minCost) {
+            minCost = groupCost;
+            selectedIndex = i;
+          }
+        }
+      }
+
+      //Replace every waterTile with a temporary water block
+      for (Point2D.Double waterTile : solutionGroup.get(selectedIndex)) {
+        map.put(waterTile, OBSTACLE_TEMPORARY_WATER);
+      }
+    }
+
+    //We can now traverse to the goal
+    addAStarPathToPendingMoves(new Point2D.Double(curX, curY), goal, direction, haveKey, haveAxe);
+
     return moveMade;
   }
-
 }
