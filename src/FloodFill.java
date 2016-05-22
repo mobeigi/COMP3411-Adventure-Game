@@ -41,6 +41,10 @@ public class FloodFill {
 
     while (!q.isEmpty()) {
       Point2D.Double first = q.removeFirst();
+
+      if (map.get(first) == null) //sanity check
+        continue;
+
       char tile = map.get(first);
 
       //If not processed
