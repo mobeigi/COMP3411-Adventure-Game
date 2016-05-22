@@ -613,8 +613,55 @@ public class MoveMaker {
       //The only way to reach the objective is to use stepping stones on adjacent water tiles
       //This filter results in severe performance gains as we do cheap connectivity tests with no map compared to
       //more costly flood fill searches on the actual map
-      if (isPointGroupAdjacent(current)) {
+      if (isPointGroupAdjacent(Arrays.asList(current)))
         list.add(current);
+    }
+  }
+
+
+  /**
+   * Perform a connectivity test using a cheap connectedWalk.
+   * A connected group of points is one where every point is reachable from any other point in the group.
+   *
+   * @param group group of points that are to be compared
+   * @return true if group array is of size 1 or less or all points are connected, false otherwise
+   */
+  private static boolean isPointGroupAdjacent(List<Point2D.Double> group) {
+    BitSet notVisited = new BitSet(group.size());
+    notVisited.set(0, group.size());
+    walkConnected(group, notVisited, 0);
+    return notVisited.isEmpty();
+  }
+
+  /**
+   * Helper function to check if a list of points are connected.
+   * Utilises a Bitset for performance gains.
+   *
+   * @param points list of points to compare
+   * @param notVisited a bitset that keeps track of what has been visited and what hasn't
+   * @param visit identifies what Point is currently being inspected
+   */
+  private static void walkConnected(List<Point2D.Double> points, BitSet notVisited, int visit) {
+    notVisited.set(visit, false);
+    Point2D.Double here = points.get(visit);
+    for (int i = 0; i < points.size(); i++) {
+      if (i != visit && notVisited.get(i)) {
+        Point2D.Double other = points.get(i);
+        boolean connected = false;
+        if (here.x == other.x) {
+          if (Math.abs(here.y - other.y) <= 1) {
+            connected = true;
+          }
+        } else if (here.y == other.y) {
+          if (Math.abs(here.x - other.x) <= 1) {
+            connected = true;
+          }
+        }
+
+        //Calls recursively
+        if (connected) {
+          walkConnected(points, notVisited, i);
+        }
       }
     }
   }
@@ -639,85 +686,6 @@ public class MoveMaker {
     return b;
   }
 
-  /**
-   * Perform a connectivity test using the FloodFill algorithm.
-   * A connected group of points is one where every point is reachable from any other point in the group.
-   *
-   * @param group group of points that are to be compared
-   * @return true if group array is of size 1 or less or all points are connected, false otherwise
-   */
-  private boolean isPointGroupAdjacent(Point2D.Double[] group) {
-    if (group.length <= 1)  //no points or single points are adjacent
-      return true;
-
-    //Do a flood fill search on a simplified map
-    Queue<Point2D.Double> q = new ArrayDeque<>();
-    Set<Point2D.Double> isConnected = new HashSet<>();
-    q.add(group[0]); //Pick first element to be the 'start' (any element will do)
-
-    while (!q.isEmpty()) {
-      Point2D.Double first = q.remove();
-
-      //If not processed
-      if (!isConnected.contains(first)) {
-
-        //See if this is one of the elements in the group, if so we will process it
-        //Otherwise, it can be considered a inaccessible block
-        boolean isInGroup = false;
-        for (Point2D.Double point : group) {
-          if (first.equals(point)) {
-            isInGroup = true;
-            break;
-          }
-        }
-
-        if (!isInGroup)
-          continue;
-
-        //Mark as processed
-        isConnected.add(first);
-
-        //Add west, east, north, south nodes
-        for (int i = 0; i < 4; ++i) {
-          int neighbourX = (int)first.getX();
-          int neighbourY = (int)first.getY();
-
-          switch (i) {
-            case 0:
-              //Tile to right
-              neighbourX += 1;
-              break;
-            case 1:
-              //Tile to left
-              neighbourX -= 1;
-              break;
-            case 2:
-              //Tile above
-              neighbourY += 1;
-              break;
-            case 3:
-              //Tile below
-              neighbourY -= 1;
-              break;
-          }
-
-          Point2D.Double neighbour = new Point2D.Double(neighbourX, neighbourY);
-
-          if (!isConnected.contains(neighbour))
-            q.add(neighbour);
-        }
-      }
-    }
-
-    //Now ensure every point is connected
-    for (Point2D.Double point : group) {
-      if (!isConnected.contains(point))
-        return false;
-    }
-
-    //Here all points would have been connected so every tile is connected
-    return true;
-  }
 
   /**
    * Given a list of solution points and some interest points calculated the cost of each solution.
