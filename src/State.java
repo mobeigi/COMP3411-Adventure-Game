@@ -75,6 +75,7 @@ public class State {
   private LinkedList<Point2D.Double> keyLocations;
   private LinkedList<Point2D.Double> ssLocations; //ss short for stepping stones
   private LinkedList<Point2D.Double> waterLocations;
+  private LinkedList<Point2D.Double> spaceLocations;
 
   /**
    * Constructor.
@@ -110,6 +111,7 @@ public class State {
     this.keyLocations = new LinkedList<>();
     this.ssLocations = new LinkedList<>();
     this.waterLocations = new LinkedList<>();
+    this.spaceLocations = new LinkedList<>();
   }
 
 
@@ -193,6 +195,9 @@ public class State {
         }
         else if (curTile == OBSTACLE_WATER && !waterLocations.contains(newTile)) {
           waterLocations.add(newTile);
+        }
+        else if (curTile == OBSTACLE_SPACE && !spaceLocations.contains(newTile)) {
+          spaceLocations.add(newTile);
         }
 
 
@@ -529,6 +534,13 @@ public class State {
    */
   public List<Point2D.Double> getWaterLocations() {
     return waterLocations;
+  }
+
+  /**
+   * @return the locations of space tiles
+   */
+  public List<Point2D.Double> getSpaceLocations() {
+    return spaceLocations;
   }
 
   /**

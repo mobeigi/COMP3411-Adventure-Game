@@ -260,6 +260,24 @@ public class MoveMaker {
           break;
       }
 
+      //Try to get to the area near another axe (don't prefer if we already have axe)
+      if (!state.getSpaceLocations().isEmpty()) {
+        boolean canGetToNewArea = false;
+        for (Point2D.Double location : state.getSpaceLocations()) {
+          //Ensure this blank space is reachable from our current player location
+          FloodFill ff = new FloodFill(state.getMap(), state.getPlayerLocation(), location);
+          if (ff.isReachable(state.haveKey(), state.haveAxe())) {
+            if (useSteppingStoneTowardsGoal(location)) {
+              canGetToNewArea = true;
+              break;
+            }
+          }
+        }
+
+        if (canGetToNewArea)
+          break;
+      }
+
       //Stage 8: Disaster stage
       //Okay we really should never get here unless there is no solution possible or something odd happens
       //If we do though, lets A* to (0,0) home and hope we can recover
@@ -628,7 +646,7 @@ public class MoveMaker {
 
   /**
    * Helper function to check if a list of points are connected.
-   * Utilises a Bitset for performance gains.
+   * Utilises a bitset for performance gains (less allocations made overall)
    *
    * @param points list of points to compare
    * @param notVisited a bitset that keeps track of what has been visited and what hasn't
