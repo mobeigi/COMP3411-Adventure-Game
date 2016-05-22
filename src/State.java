@@ -49,6 +49,9 @@ public class State {
   final static char MOVE_CHOPTREE = 'C';
   final static char MOVE_UNLOCKDOOR = 'U';
 
+  //Map dimensions
+  final static int MAX_GRID_X = 80;
+  final static int MAX_GRID_Y = 80;
 
   //Class variables
   private Map<Point2D.Double, Character> map;
@@ -149,8 +152,6 @@ public class State {
       case RIGHT:
         numTimesToRotate = 1;
         break;
-      default:
-        assert(false); //todo remove
     }
 
     for (int i = 0; i < numTimesToRotate; ++i) {
@@ -273,7 +274,6 @@ public class State {
       }
 
       //Stage 4: Do we know location of a needed resources?
-      //todo: add logic to pick closest (man dist) one rather than breaking
       if (needKey && !keyLocations.isEmpty()) {
         //Yes: Check if reachable with current inventory and traverse to it if so
         boolean isKeyAttainable = false;
@@ -281,7 +281,6 @@ public class State {
         for (Point2D.Double location : keyLocations) {
           //Sanity check
           if (map.get(location) == null || map.get(location) != TOOL_KEY) {
-            assert (false); //todo remove
             continue;
           }
 
@@ -307,7 +306,6 @@ public class State {
         for (Point2D.Double location : axeLocations) {
           //Sanity check
           if (map.get(location) == null || map.get(location) != TOOL_AXE) {
-            assert (false); //todo remove
             continue;
           }
 
@@ -332,7 +330,6 @@ public class State {
         for (Point2D.Double location : ssLocations) {
           //Sanity check
           if (map.get(location) == null || map.get(location) != TOOL_STEPPING_STONE) {
-            assert (false); //todo remove
             continue;
           }
 
@@ -358,7 +355,7 @@ public class State {
       if (!explorationDestination.equals(new Point2D.Double(curX, curY))) {
         //Do A* traversal to exploration destination
         addAStarPathToPendingMoves(new Point2D.Double(curX, curY), explorationDestination, direction, haveKey, haveAxe);
-        break; //todo was continue
+        break;
       }
 
       //Stage 6: Cannot explore any further, is there a reachable axe or tool we can pick up to perhaps help us explore more
@@ -456,8 +453,12 @@ public class State {
           break;
       }
 
-
-
+      //Stage 8: Disaster stage
+      //Okay we really should never get here unless there is no solution possible or something odd happens
+      //If we do though, lets A* to (0,0) home and hope we can recover
+      addAStarPathToPendingMoves(new Point2D.Double(curX, curY), new Point2D.Double(0, 0),
+        direction, haveKey, haveAxe);
+      break;
     }
 
     //Stage 1: If we reach this stage, we already had pending moves
@@ -472,53 +473,31 @@ public class State {
       //  Thread.currentThread().interrupt();
       //}
 
-      ++totalNumMoves;
       char moveToMake = pendingMoves.remove();
+
+      //Failsafe mechanism
+      //Should never happen but here just in case
+      char nextTile = map.get(getTileInFront(new Point2D.Double(curX, curY)));
+
+      if (moveToMake == MOVE_GOFORWARD) {
+        if ((nextTile == OBSTACLE_WATER && num_stones_held == 0) ||
+            (nextTile == OBSTACLE_BOUNDARY)){
+          //This move results in certain death, aka game over
+          //So lets just do an unlock door move instead
+          //Which will simply act as a NOP (no operation)
+          //Hopefully then we can recover and continue making proper moves
+          moveToMake = MOVE_UNLOCKDOOR;
+        }
+      }
+
       updateFromMove(moveToMake);
+      ++totalNumMoves;
+
       return moveToMake;
     }
 
-
-    //todo: remove below manual movement
-    /*
-    int ch = 0;
-
-    System.out.print("Enter Action(s): ");
-
-    try {
-      while (ch != -1) {
-        // read character from keyboard
-        ch = System.in.read();
-
-        switch (ch) { // if character is a valid action, return it
-          case 'F':
-          case 'L':
-          case 'R':
-          case 'C':
-          case 'U':
-          case 'f':
-          case 'l':
-          case 'r':
-          case 'c':
-          case 'u':
-            ++totalNumMoves;
-            updateFromMove((char) ch);
-            return ((char) ch);
-        }
-      }
-    } catch (IOException e) {
-      System.out.println("IO error:" + e);
-    }
-
-    return 0;
-    */
-
     return 0;
   }
-
-  //Update map based on changes from a move
-  //todo: optimize switch statements for direction
-
 
   /**
    * Updates the internal map as well as other variables (ie tool inventory) based on move the player is about to make.
@@ -545,8 +524,6 @@ public class State {
           case RIGHT:
             direction = UP;
             break;
-          default:
-            assert (false); //todo remove
         }
         break;
       case 'R':
@@ -564,8 +541,6 @@ public class State {
           case RIGHT:
             direction = DOWN;
             break;
-          default:
-            assert (false); //todo remove
         }
 
         break;
@@ -598,19 +573,6 @@ public class State {
           }
 
           waterLocations.remove(nextTilePoint); //no longer water
-        }
-
-
-        if (nextTile == OBSTACLE_WATER && num_stones_held == 0) {
-          //Certain death
-          //todo: handle this maybe
-          System.out.println("CERTAIN DEATH IN updateFromMove()");
-        }
-
-        if (nextTile == OBSTACLE_BOUNDARY) {
-          //Certain death
-          //todo: handle this maybe
-          System.out.println("CERTAIN DEATH IN updateFromMove()");
         }
 
         //Collect tools
@@ -646,8 +608,6 @@ public class State {
           case RIGHT:
             curX += 1;
             break;
-          default:
-            assert (false); //todo remove
         }
 
         break;
@@ -743,8 +703,6 @@ public class State {
       case RIGHT:
         nextX += 1;
         break;
-      default:
-        assert(false); //todo remove
     }
 
     //Get element at (nextX, nextY)
@@ -868,7 +826,7 @@ public class State {
    * @param m the divisor (modulus)
    * @return positive modulo result, that is: n (mod m)) where n >= 0 && n < m
    */
-  private int mod(int n, int m) { //todo: make static?
+  private static int mod(int n, int m) {
     int result = n % m;
     if (result < 0)
       result += m;
@@ -947,7 +905,7 @@ public class State {
   private static void combinations(int n, Point2D.Double[] arr, List<Point2D.Double[]> list) {
     // Calculate the number of arrays we should create
     long numArrays = binomial(arr.length, n); //use binomial here instead of power as positions do not matter
-    
+
     // Create each array
     for(int i = 0; i < numArrays; ++i) {
       list.add(new Point2D.Double[n]);

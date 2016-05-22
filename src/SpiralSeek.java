@@ -70,18 +70,19 @@ public class SpiralSeek {
     //Begin generating points based on current location and spiral
     int x = 0, y = 0, dx = 0, dy = -1;
     int maxX, maxY;
-    maxX = maxY = 200; //Todo: Can be lowered to cover 80by80 max dimensions
+    maxX = maxY = (State.MAX_GRID_X + State.MAX_GRID_Y);
+    int maxBlocks = State.MAX_GRID_X * State.MAX_GRID_Y + 1;
 
-    int maxI = Math.max(maxX, maxY) * 8; //todo: this needs to be more cleverly calculated as too low = fail
-
-    for (int i = 0; i < maxI; i++) {
+    for (int blockCount = 0; blockCount < maxBlocks;) {
       if ((-maxX / 2 <= x) && (x <= maxX / 2) && (-maxY / 2 <= y) && (y <= maxY / 2)) {
         //Create new point to inspect
         //Offset this point by the start X and start Y as the original algorithm spirals from (0,0)
         Point2D.Double newTile = new Point2D.Double(x +(int) start.getX() , y + (int) start.getY());
 
+        ++blockCount; //this is a valid block being explored
+
         //Ignore this tile if its the start
-        if (newTile != start) {
+        if (!newTile.equals(start)) {
           //Ensure this is a valid tile
           if (map.get(newTile) != null) {
             //Ensure tile is passable with our inventory
