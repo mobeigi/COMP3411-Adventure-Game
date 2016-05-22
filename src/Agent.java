@@ -12,19 +12,15 @@ import java.net.*;
 public class Agent {
 
   //Class variables
-  private State state;
+  private MoveMaker movemaker;
 
   public Agent() {
-    //Initialise our agent state
-    state = new State();
+    //Initialise our move maker which will make our moves for us
+    movemaker = new MoveMaker();
   }
 
   public char get_action( char view[][] ) {
-    // Update the state with new information provided by the view
-    state.updateFromView(view);
-
-    //Then make a move
-    return state.makeMove();
+    return movemaker.makeMove(view);
    }
 
   void print_view( char view[][] )
