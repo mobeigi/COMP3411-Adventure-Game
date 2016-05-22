@@ -1106,7 +1106,10 @@ public class State {
     if (!solutionGroup.isEmpty()) {
       int selectedIndex = 0; //initially pick first solution (default)
 
-      if (goldVisible) { //any solution is fine if gold isn't visible
+      List<Point2D.Double[]> goldSolutions = new ArrayList<Point2D.Double[]>();
+
+      //Check to see if we can pick a solution that will get us closer to gold
+      if (goldVisible) {
         int minCost = 999999; //represents infinity
 
         for (int i = 0; i < solutionGroup.size(); ++i) {
@@ -1115,9 +1118,15 @@ public class State {
 
           //Pick solution closest to gold
           for (Point2D.Double solution : group) {
-            //Manhattan distance
+            //Manhattan distance to gold
             groupCost += (Math.abs((int) solution.getX() - (int) goldLocation.getX()) +
               Math.abs((int) solution.getY() - (int) goldLocation.getY()));
+
+            //If this solution has same X/Y as gold then its a solution that will eventually lead to gold!
+            if (solution.getX() == goldLocation.getX() || solution.getY() == goldLocation.getY()) {
+              if (!goldSolutions.contains(group))
+                goldSolutions.add(group);
+            }
           }
 
           if (groupCost < minCost) {
@@ -1126,6 +1135,32 @@ public class State {
           }
         }
       }
+
+      boolean madePlan = false;
+
+      //A solution that leads to gold is not possible if goldSolutions is empty
+      //Lets find a solution that leads to stepping stones
+      if (goldSolutions.isEmpty() && !ssLocations.isEmpty()) {
+        selectedIndex = getOptimalWaterTile(solutionGroup, ssLocations);
+        madePlan = true;
+      }
+
+      //A solution that leads to stepping stone is not possible
+      //Lets find a solution that leads to keys
+      if (!madePlan && !keyLocations.isEmpty()) {
+        selectedIndex = getOptimalWaterTile(solutionGroup, keyLocations);
+        madePlan = true;
+      }
+
+      //A solution that leads to keys is not possible
+      //Lets find a solution that leads to axes
+      if (!madePlan && !axeLocations.isEmpty()) {
+        selectedIndex = getOptimalWaterTile(solutionGroup, axeLocations);
+        madePlan = true;
+      }
+
+      //At this stage, using the stepping stone on any water tile has same effect
+      //Each one has the same benefit so simply just pick any solution (ie the first one)
 
       //Replace every waterTile with a temporary water block
       for (Point2D.Double waterTile : solutionGroup.get(selectedIndex)) {
@@ -1137,5 +1172,49 @@ public class State {
     addAStarPathToPendingMoves(new Point2D.Double(curX, curY), goal, direction, haveKey, haveAxe);
 
     return moveMade;
+  }
+
+  /**
+   * Given a list of solution points and some interest points calculated the cost of each solution.
+   * It does this by applying the manhattan distance formula from each point (water tile) in the solution to
+   * every interest point and cumulatively adding this to a total. The index of the minimum costing solution is
+   * maintained and eventually returned. This is used to determine which water tile should be removed (via stepping
+   * stones) to travel based on the effectiveness of the move rather than just picking at random. If all moves have
+   * the same cost (ie it doesn't matter which one you pick), 0 is returned (first solution index).
+   *
+   * @param solutionPoints list of solutions (adjacent water tiles) that are to be examined
+   * @param interestPoints list of interest points that should be included in solution cost calculation
+   * @return the index of the best solution (lowest cost) in solutionGroup, 0 by default if no best solution or all
+   *         solutions have the same cost
+   */
+  private int getOptimalWaterTile(List<Point2D.Double[]> solutionPoints, List<Point2D.Double> interestPoints) {
+    int selectedIndex = 0; //default solution is 0
+
+    if (!interestPoints.isEmpty()) {
+      int minCost = 999999; //represents infinity
+
+      for (int i = 0; i < solutionPoints.size(); ++i) {
+        Point2D.Double[] group = solutionPoints.get(i);
+        int groupCost = 0;
+
+        //Pick solution closest to gold
+        for (Point2D.Double solution : group) {
+          //For every stepping stone we see
+          for (Point2D.Double location : interestPoints) {
+            //Manhattan distance to each interest point
+            groupCost += (Math.abs((int) solution.getX() - (int) location.getX()) +
+              Math.abs((int) solution.getY() - (int) location.getY()));
+          }
+        }
+
+        //If new minimum costing solution, save index
+        if (groupCost < minCost) {
+          minCost = groupCost;
+          selectedIndex = i;
+        }
+      }
+    }
+
+    return selectedIndex;
   }
 }
