@@ -69,14 +69,13 @@ public class AStar {
    */
   public void search(boolean hasKey, boolean hasAxe) {
     FScoreSort fss = new FScoreSort();
-    PriorityQueue<Point2D.Double> openSet = new PriorityQueue<>(10, fss); //todo: fine tune initial size
+    PriorityQueue<Point2D.Double> openSet = new PriorityQueue<>(100, fss);
 
     Set<Point2D.Double> closedSet  = new HashSet<>();
 
     //For every grid element
-    //Todo: Can be lowered to cover 80by80 max dimensions
-    for (int y = 100; y >= -100; --y) {
-      for (int x = -100; x <= 100; ++x) {
+    for (int y = State.MAX_GRID_Y; y >= -State.MAX_GRID_Y; --y) {
+      for (int x = -State.MAX_GRID_X; x <= State.MAX_GRID_X; ++x) {
         gScore.put(new Point2D.Double(x,y), INFINITY_COST);
         fScore.put(new Point2D.Double(x,y), INFINITY_COST);
       }
@@ -89,17 +88,6 @@ public class AStar {
 
     while (!openSet.isEmpty()) {
       Point2D.Double currentTile = openSet.remove();
-
-      /*
-      //todo: remove, used to debug priority queue proper ordering
-      Point2D.Double next = openSet.peek();
-      if (next != null) {
-        if (fScore.get(currentTile) > fScore.get(next)) {
-          System.out.println("ERROR: This should not happen! AStar priority mismatch");
-          System.out.println("Current fScore: " + fScore.get(currentTile) + ", next fScore: " + fScore.get(next));
-        }
-      }
-      */
 
       //Check if current tile is the goal tile
       if (currentTile.equals(goal)) {

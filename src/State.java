@@ -50,6 +50,7 @@ public class State {
   final static char MOVE_UNLOCKDOOR = 'U';
 
   //Map dimensions
+  //You may assume that the specified environment is no larger than 80 by 80
   final static int MAX_GRID_X = 80;
   final static int MAX_GRID_Y = 80;
 
@@ -103,10 +104,9 @@ public class State {
     //Prefill map with unknowns for reasonable bounds
     this.map = new HashMap<>();
 
-    //You may assume that the specified environment is no larger than 80 by 80
-    //However, as our starting origin is (0,0), our total boundary should be at least 80*2 by 80*2 or 160x160
-    for (int x = -80; x < 81; ++x) {
-      for (int y = -80; y < 81; ++y) {
+    //However, as our starting origin is (0,0), our total boundary should be at least MAX_GRID_X*2 by MAX_GRID_Y*2
+    for (int x = -MAX_GRID_X; x <= MAX_GRID_X; ++x) {
+      for (int y = -MAX_GRID_Y; y <= MAX_GRID_Y; ++y) {
         this.map.put(new Point2D.Double(x, y), OBSTACLE_UNKNOWN);
       }
     }

@@ -9,7 +9,7 @@ import java.awt.geom.Point2D;
  * The algorithm is a slightly modified version of the code linked below.
  *
  * @author Mohammad Ghasembeigi
- * @version 1.4
+ * @version 1.5
  * @see <a href="https://stackoverflow.com/questions/398299/looping-in-a-spiral/">Stack Overflow Spiral Algorithm
  * question (answered by Can Berk Guder)</a>
  * @see <a href="https://stackoverflow.com/questions/398299/looping-in-a-spiral/10607084#10607084">Java version of
