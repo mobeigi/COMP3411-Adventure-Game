@@ -5,7 +5,6 @@ import java.awt.geom.Point2D;
  * State class.
  *
  * Maintains internal map (model) of environment as well as the locations of resources (tools) and the gold.
- * Also acts as a decision maker which makes new moves based on the current environment.
  *
  * @author Mohammad Ghasembeigi
  * @version 1.8

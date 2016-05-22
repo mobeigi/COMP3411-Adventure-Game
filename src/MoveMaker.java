@@ -1,6 +1,15 @@
 import java.awt.geom.Point2D;
 import java.util.*;
 
+/**
+ * MoveMaker class.
+ *
+ * Makes decisions about the next move (or moves) to make based on internal state (the map environment).
+ * Functions by adding moves to a move queue which are carried out first before deciding what other moves to make.
+ *
+ * @author Mohammad Ghasembeigi
+ * @version 1.0
+ */
 public class MoveMaker {
   private State state;
   private Queue<Character> pendingMoves;
