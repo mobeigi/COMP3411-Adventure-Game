@@ -205,9 +205,6 @@ public class State {
         map.put(newTile, curTile);
       }
     }
-    
-    //todo: remove this
-    //printMap();
   }
 
 
@@ -332,6 +329,7 @@ public class State {
 
   /**
    * For debugging purposes.
+   * Typically called from: State#updateFromView()
    *
    * This method can be called, ideally at the end of updateFromView() to display the internal map which models the
    * environment. Some useful statistic are printed above the map such as current location coordinates and resources.
@@ -340,12 +338,8 @@ public class State {
     System.out.print("\nInternal Map\n");
     System.out.print("------------------------\n");
 
-    String strGold = haveGold ? "true" : "false";
-    String strKey = haveKey ? "true" : "false";
-    String strAxe = haveAxe ? "true" : "false";
-
     System.out.println("curX: " + curX + ", curY: " + curY);
-    System.out.print("Total moves: " + totalNumMoves + "| Gold: " + strGold + "| Key: " + haveKey + "| Axe: " +
+    System.out.print("Total moves: " + totalNumMoves + "| Gold: " + haveGold + "| Key: " + haveKey + "| Axe: " +
       haveAxe + "| Stepping Stones: " + num_stones_held);
     System.out.print("\n");
 

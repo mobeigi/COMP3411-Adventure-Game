@@ -30,8 +30,6 @@ public class MoveMaker {
   /**
    * This method makes our game playing decisions and returns 1 valid move when called (L,R,F,C,U).
    *
-   * todo: either link to program flow discussion or paste it here
-   *
    * @return a valid move (as a character) corresponding to next move the player will make
    */
   public char makeMove(char view[][]) {
@@ -389,21 +387,14 @@ public class MoveMaker {
    */
   private boolean useSteppingStoneTowardsGoal(Point2D.Double goal) {
     boolean moveMade = false;
-    List<Point2D.Double[]> solutionGroup = new ArrayList<Point2D.Double[]>(); //stores all possible solutions
+    List<Point2D.Double[]> solutionGroup = new ArrayList<>(); //stores all possible solutions
 
     for (int i = 1; i <= state.getNumSteppingStones() && !moveMade; ++i) {
-      List<Point2D.Double[]> combinationList = new ArrayList<Point2D.Double[]>();
-      Point2D.Double[] arr = (Point2D.Double[]) state.getWaterLocations().toArray(new Point2D.Double[state.getWaterLocations().size()]);
-      combinations(i, arr, combinationList); //get combinations
+      List<Point2D.Double[]> combinationList = new ArrayList<>();
+      Point2D.Double[] arr = state.getWaterLocations().toArray(new Point2D.Double[state.getWaterLocations().size()]);
+      getAdjacentcombinations(i, arr, combinationList); //get combinations
 
       for (Point2D.Double[] group : combinationList) {
-
-        //Filter non adjacent point groups
-        //The only way to reach the objective is to use stepping stones on adjacent water tiles
-        //This filter results in severe performance gains as we do cheap connectivity tests with no map compared to
-        //more costly flood fill searches on the actual map
-        if (!isPointGroupAdjacent(group))
-          continue;
 
         //Replace every waterTile with a temporary water block for now
         for (Point2D.Double waterTile : group) {
@@ -416,7 +407,6 @@ public class MoveMaker {
           //Add to solution group
           solutionGroup.add(group);
           moveMade = true;
-          //break;
         }
 
         //Restore stepping stones with original water
@@ -430,7 +420,7 @@ public class MoveMaker {
     if (!solutionGroup.isEmpty()) {
       int selectedIndex = 0; //initially pick first solution (default)
 
-      List<Point2D.Double[]> goldSolutions = new ArrayList<Point2D.Double[]>();
+      List<Point2D.Double[]> goldSolutions = new ArrayList<>();
 
       //Check to see if we can pick a solution that will get us closer to gold
       if (state.isGoldVisible()) {
@@ -591,7 +581,7 @@ public class MoveMaker {
   }
 
   /**
-   * Given an arr array with date, creates combinations of depth n.
+   * Given an arr array with date, creates combinations of depth n where each combination is a adjacent point group
    * See link for source.
    *
    * @param n depth of combinations
@@ -599,28 +589,36 @@ public class MoveMaker {
    * @param list  empty array that is to be filled with all of the combinations
    * @see <a href="https://stackoverflow.com/a/29910788/1800854">Algorithm to get all the combinations of size n
    * from an array(by Raniz)</a>
+   * @see MoveMaker#isPointGroupAdjacent(Point2D.Double[]) uses this function to filter list (memory optimization)
    */
-  private static void combinations(int n, Point2D.Double[] arr, List<Point2D.Double[]> list) {
+  private void getAdjacentcombinations(int n, Point2D.Double[] arr, List<Point2D.Double[]> list) {
     // Calculate the number of arrays we should create
-    long numArrays = binomial(arr.length, n); //use binomial here instead of power as positions do not matter
+    long numArrays = binomial(arr.length, n); //optimization: binomial here instead of power as positions do not matter
 
     // Create each array
-    for(int i = 0; i < numArrays; ++i) {
-      list.add(new Point2D.Double[n]);
-    }
-    // Fill up the arrays
-    for(int j = 0; j < n; ++j) {
-      // This is the period with which this position changes, i.e.
-      // a period of 5 means the value changes every 5th array
-      int period = (int) Math.pow(arr.length, n - j - 1);
-      for(int i = 0; i < numArrays; i++) {
-        Point2D.Double[] current = list.get(i);
+    for(int i = 0; i < numArrays; i++) {
+      Point2D.Double[] current = new Point2D.Double[n];
+      // Calculate the correct item for each position in the array
+      for(int j = 0; j < n; j++) {
+        // This is the period with which this position changes, i.e.
+        // a period of 5 means the value changes every 5th array
+        int period = (int) Math.pow(arr.length, n - j - 1);
         // Get the correct item and set it
         int index = i / period % arr.length;
         current[j] = arr[index];
       }
+
+      //Check current to see if all points inside are adjacent
+      //Filter non adjacent point groups
+      //The only way to reach the objective is to use stepping stones on adjacent water tiles
+      //This filter results in severe performance gains as we do cheap connectivity tests with no map compared to
+      //more costly flood fill searches on the actual map
+      if (isPointGroupAdjacent(current)) {
+        list.add(current);
+      }
     }
   }
+
 
   /**
    * Helper function: Calculate binomial coefficient.
@@ -652,21 +650,19 @@ public class MoveMaker {
     if (group.length <= 1)  //no points or single points are adjacent
       return true;
 
-    Map<Point2D.Double, Character> tempMap = new HashMap<>();
-
     //Do a flood fill search on a simplified map
-    LinkedList<Point2D.Double> q = new LinkedList<>();
+    Queue<Point2D.Double> q = new ArrayDeque<>();
     Set<Point2D.Double> isConnected = new HashSet<>();
     q.add(group[0]); //Pick first element to be the 'start' (any element will do)
 
     while (!q.isEmpty()) {
-      Point2D.Double first = q.removeFirst();
+      Point2D.Double first = q.remove();
 
       //If not processed
       if (!isConnected.contains(first)) {
 
         //See if this is one of the elements in the group, if so we will process it
-        //Otherwise, it can be considered a unaccessible block
+        //Otherwise, it can be considered a inaccessible block
         boolean isInGroup = false;
         for (Point2D.Double point : group) {
           if (first.equals(point)) {

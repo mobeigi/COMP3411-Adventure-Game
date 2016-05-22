@@ -69,7 +69,7 @@ public class AStar {
    */
   public void search(boolean hasKey, boolean hasAxe) {
     FScoreSort fss = new FScoreSort();
-    PriorityQueue<Point2D.Double> openSet = new PriorityQueue<>(100, fss);
+    PriorityQueue<Point2D.Double> openSet = new PriorityQueue<>(10, fss);
 
     Set<Point2D.Double> closedSet  = new HashSet<>();
 

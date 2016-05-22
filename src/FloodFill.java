@@ -34,13 +34,13 @@ public class FloodFill {
    * @return true if goal point is reachable from start point, false otherwise
    */
   public boolean isReachable(boolean hasKey, boolean hasAxe) {
-    LinkedList<Point2D.Double> q = new LinkedList<>();
+    Queue<Point2D.Double> q = new ArrayDeque<>();
     Set<Point2D.Double> isConnected = new HashSet<>();
 
     q.add(start);
 
     while (!q.isEmpty()) {
-      Point2D.Double first = q.removeFirst();
+      Point2D.Double first = q.remove();
 
       if (map.get(first) == null) //sanity check
         continue;
