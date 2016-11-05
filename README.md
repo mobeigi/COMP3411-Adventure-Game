@@ -32,6 +32,13 @@ This solution should be able to solve any sample file as long as a solution exis
 
 See the sample folder for a series of sample environments that can be solved (s0.in - s9.in).
 
+Demo
+----
+This is a demo of solving sample **s0.in**.  
+Note that a delay of 0.25ms has been added between each move for illustrative purposes.
+
+![S0 Demo](/../screenshots/screenshots/s0-demo.gif?raw=true "S0 Demo")
+
 License
 ----
 GNU General Public License v3.0
