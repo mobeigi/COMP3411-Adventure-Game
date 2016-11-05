@@ -34,7 +34,8 @@ See the sample folder for a series of sample environments that can be solved (s0
 
 Demo
 ----
-This is a demo of solving sample **s0.in**.  
+This is a demo of solving sample **s0.in**.
+A solution is found in **140** moves.
 Note that a delay of 0.25ms has been added between each move for illustrative purposes.
 
 ![S0 Demo](/../screenshots/screenshots/s0-demo.gif?raw=true "S0 Demo")
